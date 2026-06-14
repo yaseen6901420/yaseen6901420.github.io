@@ -900,18 +900,157 @@ strong {
 }
 
 @media (max-width: 768px) {
+    html {
+        font-size: 12px; /* Smaller base font on mobile */
+    }
+
     .nav-links {
         display: none;
     }
+
     .content-wrapper {
-        padding: 100px 20px 40px 20px;
+        padding: 100px 16px 40px 16px;
     }
+
     .section {
-        padding: 50px 0 20px 0;
+        padding: 40px 0 16px 0;
+        text-align: center;
     }
+
+    /* Hero */
+    .hero-title {
+        font-size: 2.4rem;
+        text-align: center;
+    }
+
+    .hero-location {
+        font-size: 1.05rem;
+        text-align: center;
+    }
+
+    .hero-meta-links {
+        font-size: 0.8rem;
+        justify-content: center;
+    }
+
+    /* Section titles */
+    .section-title {
+        font-size: 1.6rem;
+        display: block;
+        text-align: center;
+    }
+
+    .section-title::after {
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    /* Summary */
+    .summary-paragraph {
+        font-size: 0.88rem;
+        text-align: left;
+    }
+
+    .highlight-badges {
+        justify-content: center;
+    }
+
+    /* Skills grid */
+    .skills-details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .skill-detail-card h4 {
+        font-size: 1rem;
+        text-align: center;
+    }
+
+    .skill-bullets li {
+        font-size: 0.78rem;
+        text-align: left;
+    }
+
+    /* Timeline */
     .timeline-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 5px;
     }
+
+    .timeline-header h3 {
+        font-size: 0.98rem;
+    }
+
+    .timeline-date {
+        font-size: 0.8rem;
+    }
+
+    .timeline-content p {
+        font-size: 0.78rem;
+    }
+
+    /* Cards */
+    .card {
+        padding: 20px 16px;
+    }
+
+    /* Project cards */
+    .project-card h3 {
+        font-size: 0.98rem;
+    }
+
+    .project-text {
+        font-size: 0.78rem;
+    }
+
+    .project-details-bullets li {
+        font-size: 0.75rem;
+    }
+
+    /* Publications */
+    .pub-card h3 {
+        font-size: 0.98rem;
+    }
+
+    .pub-desc {
+        font-size: 0.78rem;
+    }
+
+    /* Awards */
+    .awards-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .award-card h3 {
+        font-size: 0.98rem;
+    }
+
+    /* Extra */
+    .extra-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .extra-card h3 {
+        font-size: 0.95rem;
+    }
+
+    /* Media */
+    .media-list li {
+        font-size: 0.78rem;
+    }
+
+    /* Slider buttons */
+    .prev-btn {
+        left: -10px;
+    }
+
+    .next-btn {
+        right: -10px;
+    }
+
+    /* Footer */
+    .footer p {
+        font-size: 0.8rem;
+    }
 }
+
