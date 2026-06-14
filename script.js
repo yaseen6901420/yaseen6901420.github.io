@@ -317,13 +317,25 @@ document.addEventListener('DOMContentLoaded', () => {
             // Draw twinkling stars for the cosmic universe feel
             stars.forEach(star => {
                 star.opacity += star.speed;
-                if (star.opacity > 0.8 || star.opacity < 0.15) {
+                if (star.opacity > 0.85 || star.opacity < 0.1) {
                     star.speed = -star.speed;
                 }
-                ctx.fillStyle = `rgba(245, 166, 35, ${star.opacity * 0.45})`;
-                ctx.beginPath();
-                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-                ctx.fill();
+                // Tiny glow shadow for brighter stars
+                if (star.opacity > 0.55) {
+                    ctx.save();
+                    ctx.shadowColor = `rgba(245, 166, 35, ${star.opacity * 0.5})`;
+                    ctx.shadowBlur = star.size * 3;
+                    ctx.fillStyle = `rgba(255, 220, 120, ${star.opacity * 0.85})`;
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.size * 1.1, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                } else {
+                    ctx.fillStyle = `rgba(245, 166, 35, ${star.opacity * 0.7})`;
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
             });
 
 
@@ -416,7 +428,61 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.scale(owlScale, owlScale);
             ctx.translate(-owl.x, -owl.y);
 
+
+
+            // 0. Full moon — extra warm parchment off-white, positioned behind the owl's head
+            (function drawMoon() {
+                let moonX = owl.x;           // centred on the owl
+                let moonY = owl.y - 120;      // owl head centre (head radius ~26px)
+                let moonR = 50;
+
+                // Solid rich, extra warm golden-parchment base (no gradient)
+                ctx.fillStyle = 'rgba(246, 224, 186, 1.0)'; // Deepest warm parchment tone
+                ctx.beginPath();
+                ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Thin warm-border rim
+                ctx.strokeStyle = 'rgba(195, 170, 125, 0.75)'; // Rich antique brown rim
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+
+                // Visible craters: matching deep warm antique paper shadow tones
+                let craters = [
+                    { dx: -16, dy: -20, r: 7.0 },
+                    { dx:  14, dy: -18, r: 5.5 },
+                    { dx: -28, dy:   4, r: 5.0 },
+                    { dx:   6, dy:  14, r: 8.5 },
+                    { dx: -10, dy:  26, r: 4.5 },
+                    { dx:  22, dy:   8, r: 4.0 },
+                    { dx:  -4, dy:  -6, r: 3.5 },
+                ];
+                craters.forEach(c => {
+                    // Deep warm sepia crater floor
+                    ctx.beginPath();
+                    ctx.arc(moonX + c.dx, moonY + c.dy, c.r, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(180, 150, 110, 0.45)'; // Deeper paper shadow
+                    ctx.fill();
+
+                    // Inner lighter highlight
+                    ctx.beginPath();
+                    ctx.arc(moonX + c.dx - c.r * 0.25, moonY + c.dy - c.r * 0.25, c.r * 0.5, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 244, 215, 0.60)'; // Rich warm cream highlight
+                    ctx.fill();
+
+                    // Crisp outline ring
+                    ctx.beginPath();
+                    ctx.arc(moonX + c.dx, moonY + c.dy, c.r, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(165, 135, 95, 0.50)'; // Toasted brown edge
+                    ctx.lineWidth = 0.9;
+                    ctx.stroke();
+                });
+            })();
+
+
+
             // 1. Tree branch extending from the left edge (detailed woodcut style)
+
             ctx.strokeStyle = 'rgba(211, 84, 0, 0.14)'; // warm orange border
             ctx.lineWidth = 5.2;
             ctx.beginPath();
@@ -514,7 +580,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.restore();
 
             // 4. Body (large round Snowy Owl body shape)
-            ctx.fillStyle = 'rgba(246, 238, 227, 0.28)'; // cream white base
+            ctx.fillStyle = 'rgba(246, 238, 227, 0.72)'; // cream white base — opaque enough to cover moon
             ctx.strokeStyle = 'rgba(246, 238, 227, 0.14)'; // soft border
             ctx.lineWidth = 1.4;
             ctx.beginPath();
@@ -553,7 +619,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.save();
             ctx.translate(owl.x - 26, owl.y + 10);
             ctx.rotate(-owl.wingFlare);
-            ctx.fillStyle = 'rgba(220, 208, 192, 0.24)';
+            ctx.fillStyle = 'rgba(220, 208, 192, 0.65)';
             ctx.strokeStyle = 'rgba(246, 238, 227, 0.14)';
             ctx.lineWidth = 1.1;
             ctx.beginPath();
@@ -570,7 +636,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.save();
             ctx.translate(owl.x + 26, owl.y + 10);
             ctx.rotate(owl.wingFlare);
-            ctx.fillStyle = 'rgba(220, 208, 192, 0.24)';
+            ctx.fillStyle = 'rgba(220, 208, 192, 0.65)';
             ctx.strokeStyle = 'rgba(246, 238, 227, 0.14)';
             ctx.lineWidth = 1.1;
             ctx.beginPath();
@@ -991,9 +1057,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Draw Atoms with a subtle flickering candlelight effect
             let flickerOffset = Math.sin(time * 0.004) * 0.04;
             [atom1].forEach(atom => {
-                let baseOpacity = Math.max(0.06, (atom.hover ? 0.28 : 0.14) + flickerOffset);
-                let electronOpacity = Math.max(0.15, (atom.hover ? 0.75 : 0.45) + flickerOffset * 2.5);
-                let nucleusOpacity = Math.max(0.12, (atom.hover ? 0.55 : 0.28) + flickerOffset * 1.8);
+                let baseOpacity = Math.max(0.18, (atom.hover ? 0.55 : 0.32) + flickerOffset);
+                let electronOpacity = Math.max(0.40, (atom.hover ? 0.90 : 0.65) + flickerOffset * 2.5);
+                let nucleusOpacity = Math.max(0.35, (atom.hover ? 0.80 : 0.55) + flickerOffset * 1.8);
 
                 // Draw central nucleus particles
                 ctx.fillStyle = `rgba(212, 157, 59, ${nucleusOpacity})`;
@@ -1039,8 +1105,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Draw Computer Wireframe
             // ------------------------------------------
             ctx.setLineDash([]);
-            let compOpacity = computer.hover ? 0.24 : 0.14;
-            let compGoldOpacity = computer.hover ? 0.20 : 0.10;
+            let compOpacity = computer.hover ? 0.55 : 0.32;
+            let compGoldOpacity = computer.hover ? 0.48 : 0.26;
             ctx.strokeStyle = `rgba(212, 157, 59, ${compOpacity})`;
             ctx.lineWidth = 1;
 
