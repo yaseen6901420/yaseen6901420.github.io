@@ -206,9 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.style.height = height + 'px';
         ctx.scale(dpr, dpr);
         
-        let active = width > 768; // Only animate on desktop to save battery on mobile
-        
-        // Track mouse globally
+        // Track pointer globally (mouse + touch)
         const mouse = { x: null, y: null };
         window.addEventListener('mousemove', (e) => {
             mouse.x = e.clientX;
@@ -218,6 +216,21 @@ document.addEventListener('DOMContentLoaded', () => {
             mouse.x = null;
             mouse.y = null;
         });
+        // Touch support for mobile — owl reacts to finger position
+        window.addEventListener('touchstart', (e) => {
+            const t = e.touches[0];
+            mouse.x = t.clientX;
+            mouse.y = t.clientY;
+        }, { passive: true });
+        window.addEventListener('touchmove', (e) => {
+            const t = e.touches[0];
+            mouse.x = t.clientX;
+            mouse.y = t.clientY;
+        }, { passive: true });
+        window.addEventListener('touchend', () => {
+            mouse.x = null;
+            mouse.y = null;
+        }, { passive: true });
 
         // Responsive position definitions
         let atom1 = { baseX: width * 0.82, baseY: height * 0.22, x: width * 0.82, y: height * 0.22, rx: 75, ry: 26, hover: false };
@@ -269,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
             canvas.style.height = height + 'px';
             ctx.scale(dpr, dpr);
             
-            active = width > 768;
+            // active flag removed — animations run on all screen sizes
             
             atom1.baseX = width * 0.82;
             atom1.baseY = height * 0.22;
@@ -295,11 +308,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         function animate(time) {
-            if (!active) {
-                ctx.clearRect(0, 0, width, height);
-                requestAnimationFrame(animate);
-                return;
-            }
 
             ctx.clearRect(0, 0, width, height);
 
