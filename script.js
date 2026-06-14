@@ -199,6 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let dpr = window.devicePixelRatio || 1;
         let width = window.innerWidth;
         let height = window.innerHeight;
+        let isMobile = width <= 768;
         
         canvas.width = width * dpr;
         canvas.height = height * dpr;
@@ -271,6 +272,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         initStars();
 
+        // Track wind-blown silhouette leaves
+        let leaves = [];
+        function initLeaves() {
+            leaves = [];
+            const count = isMobile ? 2 : 4; // Very few leaves for a subtle effect
+            for (let i = 0; i < count; i++) {
+                leaves.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 4 + 6,
+                    angle: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() * 0.005 + 0.003) * (Math.random() > 0.5 ? 1 : -1), // slow rotation
+                    vx: Math.random() * 0.15 + 0.25, // very slow horizontal drift
+                    vy: Math.random() * 0.1 + 0.15,  // very slow vertical falling
+                    swayTime: Math.random() * 100,
+                    swaySpeed: Math.random() * 0.012 + 0.006,
+                    opacity: Math.random() * 0.2 + 0.5
+                });
+            }
+        }
+        initLeaves();
+
         function updateDimensions() {
             dpr = window.devicePixelRatio || 1;
             width = window.innerWidth;
@@ -297,6 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             isMobile = width <= 768;
             initStars();
+            initLeaves();
         }
 
         window.addEventListener('resize', updateDimensions);
@@ -308,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
             { w: 20, maxW: 35 }
         ];
 
-        let isMobile = width <= 768;
+        isMobile = width <= 768;
 
         function animate(time) {
 
@@ -336,6 +360,42 @@ document.addEventListener('DOMContentLoaded', () => {
                     ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
                     ctx.fill();
                 }
+            });
+
+            // Update & Draw wind-blown silhouette leaves (realistic physics-based drift)
+            leaves.forEach(leaf => {
+                leaf.swayTime += leaf.swaySpeed;
+                
+                // Wind pushes the leaf steadily forward with minor turbulent gusts (sway) - scaled down for gentle breeze
+                let windGust = Math.sin(leaf.swayTime) * 0.05;
+                let lift = Math.cos(leaf.swayTime * 1.2) * 0.04; // aerodynamic lift/sink wave
+                
+                leaf.x += leaf.vx + windGust;
+                leaf.y += leaf.vy + lift;
+                
+                // Spin/tumble naturally, slightly perturbed by the wind gusts
+                leaf.angle += leaf.rotationSpeed + windGust * 0.01;
+
+                // Reset when drifting off-screen (mostly left-to-right wind)
+                if (leaf.x > width + 25 || leaf.y > height + 25) {
+                    leaf.x = -25;
+                    leaf.y = Math.random() * height * 0.7; // respawn in upper-left
+                    leaf.size = Math.random() * 4 + 6;
+                    leaf.opacity = Math.random() * 0.2 + 0.5;
+                    leaf.angle = Math.random() * Math.PI * 2;
+                }
+
+                ctx.save();
+                ctx.translate(leaf.x, leaf.y);
+                ctx.rotate(leaf.angle);
+                ctx.scale(leaf.size, leaf.size * 0.55); // slightly elongated leaf silhouette
+                ctx.fillStyle = `rgba(21, 13, 10, ${leaf.opacity})`;
+                ctx.beginPath();
+                ctx.moveTo(0, -1);
+                ctx.quadraticCurveTo(-0.8, -0.5, 0, 1);
+                ctx.quadraticCurveTo(0.8, -0.5, 0, -1);
+                ctx.fill();
+                ctx.restore();
             });
 
 
