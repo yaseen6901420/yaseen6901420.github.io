@@ -754,54 +754,82 @@ document.addEventListener('DOMContentLoaded', () => {
 
             ctx.restore(); // end owlScale transform
 
-            // Update dialogue bubble opacity based on mouse hover
-            if (owlDist < 180) {
+            // Update dialogue bubble opacity based on touch/mouse proximity
+            // On mobile the owl is scaled to 45% so reduce detection radius proportionally
+            let dialogueTriggerDist = isMobile ? 80 : 180;
+            if (owlDist < dialogueTriggerDist) {
                 owl.dialogueOpacity += (1.0 - owl.dialogueOpacity) * 0.1;
             } else {
                 owl.dialogueOpacity += (0 - owl.dialogueOpacity) * 0.15;
             }
 
-            // Dialogue cloud: only show on desktop (hidden on mobile to avoid covering text)
-            if (!isMobile && owl.dialogueOpacity > 0.015) {
-                let bw = 220;
-                let bh = 220;
-                let bx = Math.max(12, owl.x - bw / 2);
-                let by = owl.y - 302;
+            // Dialogue cloud: shown on all screen sizes, adapted for mobile layout
+            if (owl.dialogueOpacity > 0.015) {
                 let op = owl.dialogueOpacity;
 
-                // Cartoon cloud speech bubble helper (unified path for circular cloud bumps + tail)
+                // Dimensions & position differ between desktop and mobile
+                let bw, bh, bx, by, tailSeg, tailTipX, tailTipY, fontSize, lineH;
+
+                if (isMobile) {
+                    // Mobile: smaller cloud to the RIGHT of the owl with a left-pointing tail
+                    bw = 150; bh = 150;
+                    bx = Math.min(owl.x + 42, width - bw - 8);
+                    by = Math.max(8, owl.y - 75);
+                    tailSeg = 4;        // segment 4 ≈ left side (180°)
+                    tailTipX = owl.x + 20;
+                    tailTipY = owl.y - 10;
+                    fontSize = 10; lineH = 13;
+                } else {
+                    // Desktop: large cloud above the owl with a downward tail
+                    bw = 220; bh = 220;
+                    bx = Math.max(12, owl.x - bw / 2);
+                    by = owl.y - 302;
+                    tailSeg = 2;        // segment 2 ≈ bottom (90°)
+                    tailTipX = owl.x;
+                    tailTipY = by + bh + 20;
+                    fontSize = 14; lineH = 17;
+                }
+
+                // Cartoon cloud speech bubble helper — tail segment is parameterised
                 let drawCloudBubble = (x, y, w, h) => {
                     let cx = x + w / 2;
                     let cy = y + h / 2;
                     let r = w / 2;
                     let numBumps = 8;
-                    let bumpH = 8; // puffiness height
+                    let bumpH = isMobile ? 6 : 8; // puffiness height
 
                     ctx.beginPath();
                     let startAngle = -Math.PI / 8;
-                    
+
                     for (let i = 0; i < numBumps; i++) {
                         let a1 = startAngle + i * (Math.PI / 4);
                         let a2 = a1 + (Math.PI / 4);
-                        
-                        // Replace segment 2 (centered at PI/2, i.e. 90 degrees) with the downward pointer tail
-                        if (i === 2) {
+
+                        if (i === tailSeg) {
+                            // Replace this segment with the pointer tail toward the owl
                             let tx1 = cx + r * Math.cos(a1);
                             let ty1 = cy + r * Math.sin(a1);
                             let tx2 = cx + r * Math.cos(a2);
                             let ty2 = cy + r * Math.sin(a2);
-                            
+
                             ctx.lineTo(tx1, ty1);
-                            // Tail tip lands exactly on top of Hedwig's head at y + h + 20
-                            ctx.quadraticCurveTo(owl.x + 10, y + h + 8, owl.x, y + h + 20);
-                            ctx.quadraticCurveTo(owl.x - 10, y + h + 8, tx2, ty2);
+                            ctx.quadraticCurveTo(
+                                tailTipX + (isMobile ? 0 : 10),
+                                tailTipY + (isMobile ? 0 : -12),
+                                tailTipX, tailTipY
+                            );
+                            ctx.quadraticCurveTo(
+                                tailTipX + (isMobile ? 0 : -10),
+                                tailTipY + (isMobile ? 0 : -12),
+                                tx2, ty2
+                            );
                         } else {
                             let midA = a1 + (Math.PI / 8);
                             let cpX = cx + (r + bumpH) * Math.cos(midA);
                             let cpY = cy + (r + bumpH) * Math.sin(midA);
                             let endX = cx + r * Math.cos(a2);
                             let endY = cy + r * Math.sin(a2);
-                            
+
                             if (i === 0) {
                                 ctx.moveTo(cx + r * Math.cos(a1), cy + r * Math.sin(a1));
                             }
@@ -816,14 +844,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.shadowColor = `rgba(12, 7, 5, ${0.3 * op})`;
                 ctx.shadowBlur = 14;
                 ctx.shadowOffsetY = 6;
-                
-                // 2. Draw bubble background (semi-transparent dark coffee matching --bg-primary)
-                ctx.fillStyle = `rgba(21, 13, 10, ${0.76 * op})`; 
+
+                // 2. Draw bubble background
+                ctx.fillStyle = `rgba(21, 13, 10, ${0.76 * op})`;
                 drawCloudBubble(bx, by, bw, bh);
                 ctx.fill();
                 ctx.restore();
 
-                // 3. Draw bubble border (warm fireplace ember orange matching --accent-red)
+                // 3. Draw bubble border
                 ctx.strokeStyle = `rgba(211, 84, 0, ${0.65 * op})`;
                 ctx.lineWidth = 1.8;
                 drawCloudBubble(bx, by, bw, bh);
@@ -834,18 +862,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.textRendering = 'geometricPrecision';
-                
-                // Set high-quality text drop shadow for crisp visual pop
                 ctx.shadowColor = `rgba(12, 7, 5, ${0.85 * op})`;
                 ctx.shadowBlur = 3;
                 ctx.shadowOffsetX = 1;
                 ctx.shadowOffsetY = 1.2;
-                
-                // Autumn gold text color matching --accent-gold for high contrast & visibility
-                ctx.fillStyle = `rgba(245, 166, 35, ${0.98 * op})`; 
-                ctx.font = `600 italic 14px var(--font-sans)`;
-                
-                let lines = [
+                ctx.fillStyle = `rgba(245, 166, 35, ${0.98 * op})`;
+                ctx.font = `600 italic ${fontSize}px var(--font-sans)`;
+
+                let lines = isMobile ? [
+                    "Did you know?",
+                    "I love different",
+                    "sorts of tea:",
+                    "white, green,",
+                    "black, matcha-",
+                    "you name it!",
+                    "Whoot fun!"
+                ] : [
                     "Did you know?",
                     "I love experimenting",
                     "around with different",
@@ -857,14 +889,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     "you name it!",
                     "Whoot fun!"
                 ];
-                
-                // Draw text centered vertically and horizontally inside the cloud
-                let startY = by + bh / 2 - ((lines.length - 1) * 17) / 2;
+
+                let startY = by + bh / 2 - ((lines.length - 1) * lineH) / 2;
                 for (let i = 0; i < lines.length; i++) {
-                    ctx.fillText(lines[i], bx + bw / 2, startY + i * 17);
+                    ctx.fillText(lines[i], bx + bw / 2, startY + i * lineH);
                 }
                 ctx.restore();
-            } // end dialogue cloud (desktop only)
+            } // end dialogue cloud
+
 
             // Update interactive states & positions (smooth interpolation)
             [atom1].forEach(atom => {
