@@ -479,67 +479,76 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             })();
 
-
-
-            // 1. Tree branch extending from the left edge (detailed woodcut style)
-
-            ctx.strokeStyle = 'rgba(211, 84, 0, 0.14)'; // warm orange border
-            ctx.lineWidth = 5.2;
-            ctx.beginPath();
-            ctx.moveTo(0, owl.y + 44);
-            ctx.lineTo(owl.x + 45, owl.y + 44);
-            ctx.stroke();
-
-            // Inner wood grain detail lines on branch
-            ctx.strokeStyle = 'rgba(159, 140, 125, 0.08)'; // --text-muted
-            ctx.lineWidth = 1.3;
-            ctx.beginPath();
-            ctx.moveTo(0, owl.y + 41);
-            ctx.lineTo(owl.x + 45, owl.y + 41);
-            ctx.moveTo(0, owl.y + 47);
-            ctx.lineTo(owl.x + 42, owl.y + 47);
-            ctx.stroke();
-
-            // Side twigs branching off
-            ctx.strokeStyle = 'rgba(211, 84, 0, 0.14)';
-            ctx.lineWidth = 2.4;
-            ctx.beginPath();
-            // Down-left twig
-            ctx.moveTo(owl.x - 18, owl.y + 44);
-            ctx.quadraticCurveTo(owl.x - 30, owl.y + 56, owl.x - 46, owl.y + 54);
-            // Up-right twig
-            ctx.moveTo(owl.x + 20, owl.y + 44);
-            ctx.quadraticCurveTo(owl.x + 36, owl.y + 32, owl.x + 58, owl.y + 35);
-            ctx.stroke();
-
-            // Leaves helper
-            let drawCaricatureLeaf = (lx, ly, rot, size) => {
-                ctx.save();
-                ctx.translate(lx, ly);
-                ctx.rotate(rot);
-                ctx.scale(size, size);
-                ctx.fillStyle = 'rgba(211, 84, 0, 0.04)'; // warm orange highlight
-                ctx.strokeStyle = 'rgba(211, 84, 0, 0.2)';
-                ctx.lineWidth = 1.1;
+            // 1. Organic Silhouette Tree Branch (Beautiful tapered silhouette next to/under the owl)
+            (function drawSilhouetteBranch() {
+                ctx.fillStyle = 'rgba(21, 13, 10, 0.95)'; // Deep charcoal silhouette
                 ctx.beginPath();
-                ctx.moveTo(0, 0);
-                ctx.quadraticCurveTo(-5, -8, 0, -16);
-                ctx.quadraticCurveTo(5, -8, 0, 0);
+
+                // Main branch top contour
+                ctx.moveTo(owl.x - 350, owl.y + 70);
+                ctx.quadraticCurveTo(owl.x - 200, owl.y + 55, owl.x - 120, owl.y + 48);
+                // Under claws
+                ctx.quadraticCurveTo(owl.x - 40, owl.y + 44, owl.x + 40, owl.y + 44);
+                // Tapering to the right
+                ctx.quadraticCurveTo(owl.x + 120, owl.y + 40, owl.x + 200, owl.y + 25);
+                
+                // Tip of the right branch
+                ctx.quadraticCurveTo(owl.x + 220, owl.y + 20, owl.x + 240, owl.y + 12);
+                ctx.quadraticCurveTo(owl.x + 220, owl.y + 25, owl.x + 200, owl.y + 32);
+
+                // Lower contour of the main branch
+                ctx.quadraticCurveTo(owl.x + 120, owl.y + 48, owl.x + 40, owl.y + 52);
+                ctx.quadraticCurveTo(owl.x - 40, owl.y + 54, owl.x - 120, owl.y + 60);
+                ctx.quadraticCurveTo(owl.x - 200, owl.y + 75, owl.x - 350, owl.y + 95);
+                ctx.closePath();
                 ctx.fill();
-                ctx.stroke();
-                // vein
-                ctx.beginPath();
-                ctx.moveTo(0, 0);
-                ctx.lineTo(0, -14);
-                ctx.stroke();
-                ctx.restore();
-            };
 
-            // Draw branch leaves
-            drawCaricatureLeaf(owl.x - 32, owl.y + 52, -1.8, 0.85);
-            drawCaricatureLeaf(owl.x - 43, owl.y + 54, -2.4, 0.75);
-            drawCaricatureLeaf(owl.x + 36, owl.y + 36, 0.8, 0.85);
-            drawCaricatureLeaf(owl.x + 50, owl.y + 34, 1.2, 0.75);
+                // Draw organic sub-branches/twigs as filled paths or thick tapered lines
+                let drawTwig = (startX, startY, controlX, controlY, endX, endY, startWidth) => {
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.quadraticCurveTo(controlX, controlY, endX, endY);
+                    ctx.strokeStyle = 'rgba(21, 13, 10, 0.95)';
+                    ctx.lineCap = 'round';
+                    // We can draw a tapered line by drawing a few overlapping segments with decreasing width
+                    for (let i = 0; i < 10; i++) {
+                        let t1 = i / 10;
+                        let t2 = (i + 1) / 10;
+                        let x1 = (1 - t1) * (1 - t1) * startX + 2 * (1 - t1) * t1 * controlX + t1 * t1 * endX;
+                        let y1 = (1 - t1) * (1 - t1) * startY + 2 * (1 - t1) * t1 * controlY + t1 * t1 * endY;
+                        let x2 = (1 - t2) * (1 - t2) * startX + 2 * (1 - t2) * t2 * controlX + t2 * t2 * endX;
+                        let y2 = (1 - t2) * (1 - t2) * startY + 2 * (1 - t2) * t2 * controlY + t2 * t2 * endY;
+                        ctx.lineWidth = startWidth * (1 - t1 * 0.85);
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    }
+                };
+
+                // Twig 1: Up-left from base area
+                drawTwig(owl.x - 260, owl.y + 62, owl.x - 290, owl.y + 35, owl.x - 320, owl.y + 15, 6);
+                drawTwig(owl.x - 290, owl.y + 35, owl.x - 300, owl.y + 20, owl.x - 310, owl.y + 5, 3);
+                drawTwig(owl.x - 280, owl.y + 45, owl.x - 265, owl.y + 25, owl.x - 250, owl.y + 10, 3);
+
+                // Twig 2: Mid-left twig reaching up
+                drawTwig(owl.x - 160, owl.y + 52, owl.x - 170, owl.y + 25, owl.x - 180, owl.y - 5, 5);
+                drawTwig(owl.x - 170, owl.y + 25, owl.x - 160, owl.y + 5, owl.x - 150, owl.y - 12, 2.5);
+
+                // Twig 3: Strong central branch reaching high next to owl's left
+                drawTwig(owl.x - 70, owl.y + 48, owl.x - 65, owl.y - 5, owl.x - 85, owl.y - 50, 7);
+                drawTwig(owl.x - 67, owl.y + 15, owl.x - 80, owl.y - 10, owl.x - 90, owl.y - 35, 4);
+                drawTwig(owl.x - 75, owl.y - 20, owl.x - 70, owl.y - 40, owl.x - 73, owl.y - 65, 3.5);
+
+                // Twig 4: Twig extending up-right from the right side of owl
+                drawTwig(owl.x + 80, owl.y + 43, owl.x + 110, owl.y + 25, owl.x + 130, owl.y + 5, 4.5);
+                drawTwig(owl.x + 100, owl.y + 31, owl.x + 115, owl.y + 15, owl.x + 120, owl.y - 5, 2.5);
+
+                // Twig 5: Lower hanging branch
+                drawTwig(owl.x - 110, owl.y + 58, owl.x - 60, owl.y + 75, owl.x + 20, owl.y + 70, 7);
+                drawTwig(owl.x - 30, owl.y + 70, owl.x + 20, owl.y + 85, owl.x + 80, owl.y + 82, 4);
+                drawTwig(owl.x + 20, owl.y + 70, owl.x + 40, owl.y + 85, owl.x + 60, owl.y + 92, 3);
+            })();
 
             // 2. Claws (charcoal grey claws clutching the branch)
             ctx.fillStyle = 'rgba(21, 13, 10, 0.45)'; // dark coffee
