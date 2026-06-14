@@ -767,135 +767,186 @@ document.addEventListener('DOMContentLoaded', () => {
             if (owl.dialogueOpacity > 0.015) {
                 let op = owl.dialogueOpacity;
 
-                // Dimensions & position differ between desktop and mobile
-                let bw, bh, bx, by, tailSeg, tailTipX, tailTipY, fontSize, lineH;
-
                 if (isMobile) {
-                    // Mobile: smaller cloud to the RIGHT of the owl with a left-pointing tail
-                    bw = 150; bh = 150;
-                    bx = Math.min(owl.x + 42, width - bw - 8);
-                    by = Math.max(8, owl.y - 75);
-                    tailSeg = 4;        // segment 4 ≈ left side (180°)
-                    tailTipX = owl.x + 20;
-                    tailTipY = owl.y - 10;
-                    fontSize = 10; lineH = 13;
-                } else {
-                    // Desktop: large cloud above the owl with a downward tail
-                    bw = 220; bh = 220;
-                    bx = Math.max(12, owl.x - bw / 2);
-                    by = owl.y - 302;
-                    tailSeg = 2;        // segment 2 ≈ bottom (90°)
-                    tailTipX = owl.x;
-                    tailTipY = by + bh + 20;
-                    fontSize = 14; lineH = 17;
-                }
+                    // ── MOBILE: tight auto-sized rounded rectangle, max 2 lines ──
+                    let mFontSize = 11;
+                    let mLineH = 15;
+                    let mPadX = 12;
+                    let mPadY = 9;
+                    let mRadius = 10; // rounded corner radius
 
-                // Cartoon cloud speech bubble helper — tail segment is parameterised
-                let drawCloudBubble = (x, y, w, h) => {
-                    let cx = x + w / 2;
-                    let cy = y + h / 2;
-                    let r = w / 2;
-                    let numBumps = 8;
-                    let bumpH = isMobile ? 6 : 8; // puffiness height
+                    // 1-line condensed text for mobile
+                    let mLines = [
+                        "Did you know? I collect tea- Whoot fun! \uD83C\uDF75"
+                    ];
 
-                    ctx.beginPath();
-                    let startAngle = -Math.PI / 8;
+                    // Measure actual rendered text width to size box tightly
+                    ctx.font = `600 italic ${mFontSize}px var(--font-sans)`;
+                    let maxTW = Math.max(...mLines.map(l => ctx.measureText(l).width));
 
-                    for (let i = 0; i < numBumps; i++) {
-                        let a1 = startAngle + i * (Math.PI / 4);
-                        let a2 = a1 + (Math.PI / 4);
+                    let bw = maxTW + mPadX * 2;
+                    let bh = mLines.length * mLineH + mPadY * 2;
+                    let bx = Math.min(owl.x + 36, width - bw - 6);
+                    let by = owl.y - bh / 2 - 4; // vertically centred on owl
 
-                        if (i === tailSeg) {
-                            // Replace this segment with the pointer tail toward the owl
-                            let tx1 = cx + r * Math.cos(a1);
-                            let ty1 = cy + r * Math.sin(a1);
-                            let tx2 = cx + r * Math.cos(a2);
-                            let ty2 = cy + r * Math.sin(a2);
+                    // Helper: draw a rounded rectangle path
+                    let drawRoundRect = (x, y, w, h, r) => {
+                        ctx.beginPath();
+                        ctx.moveTo(x + r, y);
+                        ctx.lineTo(x + w - r, y);
+                        ctx.arc(x + w - r, y + r, r, -Math.PI / 2, 0);
+                        ctx.lineTo(x + w, y + h - r);
+                        ctx.arc(x + w - r, y + h - r, r, 0, Math.PI / 2);
+                        ctx.lineTo(x + r, y + h);
+                        ctx.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI);
+                        ctx.lineTo(x, y + r);
+                        ctx.arc(x + r, y + r, r, Math.PI, Math.PI * 3 / 2);
+                        ctx.closePath();
+                    };
 
-                            ctx.lineTo(tx1, ty1);
-                            ctx.quadraticCurveTo(
-                                tailTipX + (isMobile ? 0 : 10),
-                                tailTipY + (isMobile ? 0 : -12),
-                                tailTipX, tailTipY
-                            );
-                            ctx.quadraticCurveTo(
-                                tailTipX + (isMobile ? 0 : -10),
-                                tailTipY + (isMobile ? 0 : -12),
-                                tx2, ty2
-                            );
-                        } else {
-                            let midA = a1 + (Math.PI / 8);
-                            let cpX = cx + (r + bumpH) * Math.cos(midA);
-                            let cpY = cy + (r + bumpH) * Math.sin(midA);
-                            let endX = cx + r * Math.cos(a2);
-                            let endY = cy + r * Math.sin(a2);
+                    // Helper: draw left-pointing triangular tail from left edge → owl
+                    let tailMidY = by + bh / 2;
+                    let tailTipX = owl.x + 22;
+                    let tailTipY = tailMidY;
+                    let drawTail = () => {
+                        ctx.beginPath();
+                        ctx.moveTo(bx, tailMidY - 6);
+                        ctx.lineTo(tailTipX, tailTipY);
+                        ctx.lineTo(bx, tailMidY + 6);
+                        ctx.closePath();
+                    };
 
-                            if (i === 0) {
-                                ctx.moveTo(cx + r * Math.cos(a1), cy + r * Math.sin(a1));
-                            }
-                            ctx.quadraticCurveTo(cpX, cpY, endX, endY);
-                        }
+                    // 1. Shadow
+                    ctx.save();
+                    ctx.shadowColor = `rgba(12, 7, 5, ${0.35 * op})`;
+                    ctx.shadowBlur = 10;
+                    ctx.shadowOffsetY = 4;
+
+                    // 2. Fill background (rect + tail together so shadow is unified)
+                    ctx.fillStyle = `rgba(21, 13, 10, ${0.82 * op})`;
+                    drawRoundRect(bx, by, bw, bh, mRadius);
+                    ctx.fill();
+                    drawTail();
+                    ctx.fill();
+                    ctx.restore();
+
+                    // 3. Border
+                    ctx.strokeStyle = `rgba(211, 84, 0, ${0.70 * op})`;
+                    ctx.lineWidth = 1.5;
+                    drawRoundRect(bx, by, bw, bh, mRadius);
+                    ctx.stroke();
+                    drawTail();
+                    ctx.stroke();
+
+                    // 4. Text
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.textRendering = 'geometricPrecision';
+                    ctx.shadowColor = `rgba(12, 7, 5, ${0.9 * op})`;
+                    ctx.shadowBlur = 2;
+                    ctx.shadowOffsetX = 0.5;
+                    ctx.shadowOffsetY = 0.8;
+                    ctx.fillStyle = `rgba(245, 166, 35, ${0.98 * op})`;
+                    ctx.font = `600 italic ${mFontSize}px var(--font-sans)`;
+
+                    let startY = by + mPadY + mLineH / 2;
+                    for (let i = 0; i < mLines.length; i++) {
+                        ctx.fillText(mLines[i], bx + bw / 2, startY + i * mLineH);
                     }
-                    ctx.closePath();
-                };
+                    ctx.restore();
 
-                // 1. Draw bubble shadow
-                ctx.save();
-                ctx.shadowColor = `rgba(12, 7, 5, ${0.3 * op})`;
-                ctx.shadowBlur = 14;
-                ctx.shadowOffsetY = 6;
+                } else {
+                    // ── DESKTOP: original puffy cloud bubble with downward tail ──
+                    let bw = 220, bh = 220;
+                    let bx = Math.max(12, owl.x - bw / 2);
+                    let by = owl.y - 302;
 
-                // 2. Draw bubble background
-                ctx.fillStyle = `rgba(21, 13, 10, ${0.76 * op})`;
-                drawCloudBubble(bx, by, bw, bh);
-                ctx.fill();
-                ctx.restore();
+                    let drawCloudBubble = (x, y, w, h) => {
+                        let cx = x + w / 2;
+                        let cy = y + h / 2;
+                        let r = w / 2;
+                        let numBumps = 8;
+                        let bumpH = 8;
 
-                // 3. Draw bubble border
-                ctx.strokeStyle = `rgba(211, 84, 0, ${0.65 * op})`;
-                ctx.lineWidth = 1.8;
-                drawCloudBubble(bx, by, bw, bh);
-                ctx.stroke();
+                        ctx.beginPath();
+                        let startAngle = -Math.PI / 8;
 
-                // 4. Draw dialogue text
-                ctx.save();
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.textRendering = 'geometricPrecision';
-                ctx.shadowColor = `rgba(12, 7, 5, ${0.85 * op})`;
-                ctx.shadowBlur = 3;
-                ctx.shadowOffsetX = 1;
-                ctx.shadowOffsetY = 1.2;
-                ctx.fillStyle = `rgba(245, 166, 35, ${0.98 * op})`;
-                ctx.font = `600 italic ${fontSize}px var(--font-sans)`;
+                        for (let i = 0; i < numBumps; i++) {
+                            let a1 = startAngle + i * (Math.PI / 4);
+                            let a2 = a1 + (Math.PI / 4);
 
-                let lines = isMobile ? [
-                    "Did you know?",
-                    "I love different",
-                    "sorts of tea:",
-                    "white, green,",
-                    "black, matcha-",
-                    "you name it!",
-                    "Whoot fun!"
-                ] : [
-                    "Did you know?",
-                    "I love experimenting",
-                    "around with different",
-                    "sorts of tea in",
-                    "my spare time:",
-                    "white tea, green tea,",
-                    "black tea yellow tea,",
-                    "fruit teas, matcha-",
-                    "you name it!",
-                    "Whoot fun!"
-                ];
+                            if (i === 2) {
+                                // Downward tail toward Hedwig's head
+                                let tx1 = cx + r * Math.cos(a1);
+                                let ty1 = cy + r * Math.sin(a1);
+                                let tx2 = cx + r * Math.cos(a2);
+                                let ty2 = cy + r * Math.sin(a2);
 
-                let startY = by + bh / 2 - ((lines.length - 1) * lineH) / 2;
-                for (let i = 0; i < lines.length; i++) {
-                    ctx.fillText(lines[i], bx + bw / 2, startY + i * lineH);
+                                ctx.lineTo(tx1, ty1);
+                                ctx.quadraticCurveTo(owl.x + 10, y + h + 8, owl.x, y + h + 20);
+                                ctx.quadraticCurveTo(owl.x - 10, y + h + 8, tx2, ty2);
+                            } else {
+                                let midA = a1 + (Math.PI / 8);
+                                let cpX = cx + (r + bumpH) * Math.cos(midA);
+                                let cpY = cy + (r + bumpH) * Math.sin(midA);
+                                let endX = cx + r * Math.cos(a2);
+                                let endY = cy + r * Math.sin(a2);
+
+                                if (i === 0) ctx.moveTo(cx + r * Math.cos(a1), cy + r * Math.sin(a1));
+                                ctx.quadraticCurveTo(cpX, cpY, endX, endY);
+                            }
+                        }
+                        ctx.closePath();
+                    };
+
+                    ctx.save();
+                    ctx.shadowColor = `rgba(12, 7, 5, ${0.3 * op})`;
+                    ctx.shadowBlur = 14;
+                    ctx.shadowOffsetY = 6;
+                    ctx.fillStyle = `rgba(21, 13, 10, ${0.76 * op})`;
+                    drawCloudBubble(bx, by, bw, bh);
+                    ctx.fill();
+                    ctx.restore();
+
+                    ctx.strokeStyle = `rgba(211, 84, 0, ${0.65 * op})`;
+                    ctx.lineWidth = 1.8;
+                    drawCloudBubble(bx, by, bw, bh);
+                    ctx.stroke();
+
+                    ctx.save();
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.textRendering = 'geometricPrecision';
+                    ctx.shadowColor = `rgba(12, 7, 5, ${0.85 * op})`;
+                    ctx.shadowBlur = 3;
+                    ctx.shadowOffsetX = 1;
+                    ctx.shadowOffsetY = 1.2;
+                    ctx.fillStyle = `rgba(245, 166, 35, ${0.98 * op})`;
+                    ctx.font = `600 italic 14px var(--font-sans)`;
+
+                    let lines = [
+                        "Did you know?",
+                        "I love experimenting",
+                        "around with different",
+                        "sorts of tea in",
+                        "my spare time:",
+                        "white tea, green tea,",
+                        "black tea yellow tea,",
+                        "fruit teas, matcha-",
+                        "you name it!",
+                        "Whoot fun!"
+                    ];
+
+                    let startY = by + bh / 2 - ((lines.length - 1) * 17) / 2;
+                    for (let i = 0; i < lines.length; i++) {
+                        ctx.fillText(lines[i], bx + bw / 2, startY + i * 17);
+                    }
+                    ctx.restore();
                 }
-                ctx.restore();
-            } // end dialogue cloud
+
+            } // end dialogue
+
 
 
             // Update interactive states & positions (smooth interpolation)
