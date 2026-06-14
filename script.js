@@ -227,9 +227,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let snowSparkles = [];
         let owl = {
             x: Math.max(95, width * 0.10),
-            y: height * 0.45,
+            y: height * 0.65,
             baseX: Math.max(95, width * 0.10),
-            baseY: height * 0.45,
+            baseY: height * 0.65,
             eyesOpen: false,
             blinkTimer: Math.random() * 4000 + 2000,
             blinkDuration: 0,
@@ -280,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
             computer.baseY = height * 0.78;
 
             owl.baseX = Math.max(95, width * 0.10);
-            owl.baseY = height * 0.45;
+            owl.baseY = height * 0.65;
 
             initStars();
         }
@@ -843,7 +843,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Update interactive states & positions (smooth interpolation)
-            [atom1, atom2].forEach(atom => {
+            [atom1].forEach(atom => {
                 let targetX = atom.baseX;
                 let targetY = atom.baseY;
                 atom.hover = false;
@@ -883,7 +883,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Draw Atoms with a subtle flickering candlelight effect
             let flickerOffset = Math.sin(time * 0.004) * 0.04;
-            [atom1, atom2].forEach(atom => {
+            [atom1].forEach(atom => {
                 let baseOpacity = Math.max(0.06, (atom.hover ? 0.28 : 0.14) + flickerOffset);
                 let electronOpacity = Math.max(0.15, (atom.hover ? 0.75 : 0.45) + flickerOffset * 2.5);
                 let nucleusOpacity = Math.max(0.12, (atom.hover ? 0.55 : 0.28) + flickerOffset * 1.8);
