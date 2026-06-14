@@ -283,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.scale(dpr, dpr);
             
             // active flag removed — animations run on all screen sizes
-            
+
             atom1.baseX = width * 0.82;
             atom1.baseY = height * 0.22;
             atom2.baseX = width * 0.15;
@@ -295,6 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
             owl.baseX = Math.max(95, width * 0.10);
             owl.baseY = height * 0.65;
 
+            isMobile = width <= 768;
             initStars();
         }
 
@@ -306,6 +307,8 @@ document.addEventListener('DOMContentLoaded', () => {
             { w: 45, maxW: 65 },
             { w: 20, maxW: 35 }
         ];
+
+        let isMobile = width <= 768;
 
         function animate(time) {
 
@@ -326,8 +329,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
             // Update & Draw Majestic Perched Owl (Hedwig) on the left branch
-            owl.x = owl.baseX;
-            owl.y = owl.baseY;
+            // On mobile: draw at 45% scale in the top-left corner, dialogue hidden
+            let owlScale = isMobile ? 0.45 : 1.0;
+            let scaledBaseX = isMobile ? Math.max(40, width * 0.08) : owl.baseX;
+            let scaledBaseY = isMobile ? height * 0.22 : owl.baseY;
+            owl.x = scaledBaseX;
+            owl.y = scaledBaseY;
 
             let owlDist = 9999;
             if (mouse.x !== null && mouse.y !== null) {
@@ -402,6 +409,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             ctx.lineWidth = 1;
             ctx.setLineDash([]);
+
+            // Scale owl drawing for mobile: pivot around owl position
+            ctx.save();
+            ctx.translate(owl.x, owl.y);
+            ctx.scale(owlScale, owlScale);
+            ctx.translate(-owl.x, -owl.y);
 
             // 1. Tree branch extending from the left edge (detailed woodcut style)
             ctx.strokeStyle = 'rgba(211, 84, 0, 0.14)'; // warm orange border
@@ -739,6 +752,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             ctx.restore();
 
+            ctx.restore(); // end owlScale transform
+
             // Update dialogue bubble opacity based on mouse hover
             if (owlDist < 180) {
                 owl.dialogueOpacity += (1.0 - owl.dialogueOpacity) * 0.1;
@@ -746,7 +761,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 owl.dialogueOpacity += (0 - owl.dialogueOpacity) * 0.15;
             }
 
-            if (owl.dialogueOpacity > 0.015) {
+            // Dialogue cloud: only show on desktop (hidden on mobile to avoid covering text)
+            if (!isMobile && owl.dialogueOpacity > 0.015) {
                 let bw = 220;
                 let bh = 220;
                 let bx = Math.max(12, owl.x - bw / 2);
@@ -848,7 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ctx.fillText(lines[i], bx + bw / 2, startY + i * 17);
                 }
                 ctx.restore();
-            }
+            } // end dialogue cloud (desktop only)
 
             // Update interactive states & positions (smooth interpolation)
             [atom1].forEach(atom => {
