@@ -212,6 +212,20 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('mousemove', (e) => {
             mouse.x = e.clientX;
             mouse.y = e.clientY;
+            
+            // Spawn magic sparkles at wand tip
+            if (Math.random() < 0.40) {
+                wandSparkles.push({
+                    x: e.clientX + 5,
+                    y: e.clientY + 5,
+                    vx: (Math.random() - 0.5) * 0.8,
+                    vy: Math.random() * 0.4 + 0.1, // slowly falls
+                    size: Math.random() * 2.0 + 1.2,
+                    life: 1.0,
+                    decay: Math.random() * 0.025 + 0.015,
+                    color: Math.random() > 0.5 ? 'rgba(245, 166, 35, ' : 'rgba(255, 230, 160, ' // gold / warm cream
+                });
+            }
         });
         window.addEventListener('mouseleave', () => {
             mouse.x = null;
@@ -227,6 +241,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const t = e.touches[0];
             mouse.x = t.clientX;
             mouse.y = t.clientY;
+            
+            // Spawn magic sparkles on touch drag too
+            if (Math.random() < 0.40) {
+                wandSparkles.push({
+                    x: t.clientX + 5,
+                    y: t.clientY + 5,
+                    vx: (Math.random() - 0.5) * 0.8,
+                    vy: Math.random() * 0.4 + 0.1,
+                    size: Math.random() * 2.0 + 1.2,
+                    life: 1.0,
+                    decay: Math.random() * 0.025 + 0.015,
+                    color: Math.random() > 0.5 ? 'rgba(245, 166, 35, ' : 'rgba(255, 230, 160, '
+                });
+            }
         }, { passive: true });
         window.addEventListener('touchend', () => {
             mouse.x = null;
@@ -274,6 +302,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Track wind-blown silhouette leaves
         let leaves = [];
+        // Track wand sparkles
+        let wandSparkles = [];
         function initLeaves() {
             leaves = [];
             const count = isMobile ? 2 : 4; // Very few leaves for a subtle effect
@@ -397,6 +427,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.fill();
                 ctx.restore();
             });
+
+            // Update & Draw wandSparkles (magic wand path sparkles)
+            for (let i = wandSparkles.length - 1; i >= 0; i--) {
+                let s = wandSparkles[i];
+                s.x += s.vx;
+                s.y += s.vy;
+                s.life -= s.decay;
+                
+                if (s.life <= 0) {
+                    wandSparkles.splice(i, 1);
+                    continue;
+                }
+
+                // Draw sparkle as a tiny 4-point star with a soft glow shadow
+                ctx.save();
+                ctx.fillStyle = s.color + s.life + ')';
+                ctx.shadowColor = s.color + (s.life * 0.55) + ')';
+                ctx.shadowBlur = s.size * 2.2;
+                
+                ctx.beginPath();
+                let cx = s.x;
+                let cy = s.y;
+                let size = s.size;
+                ctx.moveTo(cx, cy - size);
+                ctx.quadraticCurveTo(cx, cy, cx + size, cy);
+                ctx.quadraticCurveTo(cx, cy, cx, cy + size);
+                ctx.quadraticCurveTo(cx, cy, cx - size, cy);
+                ctx.quadraticCurveTo(cx, cy, cx, cy - size);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
 
 
 
