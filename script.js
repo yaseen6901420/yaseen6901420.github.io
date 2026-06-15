@@ -545,8 +545,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.beginPath();
 
                 // Main branch top contour
-                ctx.moveTo(owl.x - 350, owl.y + 70);
-                ctx.quadraticCurveTo(owl.x - 200, owl.y + 55, owl.x - 120, owl.y + 48);
+                ctx.moveTo(owl.x - 1200, owl.y + 110);
+                ctx.quadraticCurveTo(owl.x - 500, owl.y + 75, owl.x - 120, owl.y + 48);
                 // Under claws
                 ctx.quadraticCurveTo(owl.x - 40, owl.y + 44, owl.x + 40, owl.y + 44);
                 // Tapering to the right
@@ -559,7 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Lower contour of the main branch
                 ctx.quadraticCurveTo(owl.x + 120, owl.y + 48, owl.x + 40, owl.y + 52);
                 ctx.quadraticCurveTo(owl.x - 40, owl.y + 54, owl.x - 120, owl.y + 60);
-                ctx.quadraticCurveTo(owl.x - 200, owl.y + 75, owl.x - 350, owl.y + 95);
+                ctx.quadraticCurveTo(owl.x - 500, owl.y + 95, owl.x - 1200, owl.y + 160);
                 ctx.closePath();
                 ctx.fill();
 
