@@ -284,6 +284,8 @@ document.addEventListener('DOMContentLoaded', () => {
             dialogueOpacity: 0
         };
 
+
+
         // Track stars for cosmic background
         let stars = [];
         function initStars() {
@@ -467,6 +469,20 @@ document.addEventListener('DOMContentLoaded', () => {
             let owlScale = isMobile ? 0.45 : 1.0;
             let scaledBaseX = isMobile ? Math.max(40, width * 0.08) : owl.baseX;
             let scaledBaseY = isMobile ? height * 0.22 : owl.baseY;
+
+            // Anchor owl directly above the games quiz question card on games page
+            let isGamePage = !!window.forceOwlDialogue;
+            if (isGamePage && !isMobile) {
+                let gamesCard = document.querySelector('.games-card');
+                if (gamesCard) {
+                    let rect = gamesCard.getBoundingClientRect();
+                    // Center owl horizontally above the box
+                    scaledBaseX = rect.left + rect.width / 2;
+                    // Position perched directly on the top border (leaving room for claws)
+                    scaledBaseY = rect.top - 46;
+                }
+            }
+
             owl.x = scaledBaseX;
             owl.y = scaledBaseY;
 
@@ -810,7 +826,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.stroke();
 
             // Eyes
-            if (owl.eyesOpen && !isBlinking) {
+            if ((owl.eyesOpen || window.forceOwlDialogue) && !isBlinking) {
                 // Striking yellow/amber irises
                 ctx.fillStyle = 'rgba(245, 166, 35, 0.62)'; // --accent-gold
                 ctx.beginPath();
@@ -951,10 +967,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             ctx.restore(); // end owlScale transform
 
-            // Update dialogue bubble opacity based on touch/mouse proximity
-            // On mobile the owl is scaled to 45% so reduce detection radius proportionally
+            // Update dialogue bubble opacity based on touch/mouse proximity or external force flag
             let dialogueTriggerDist = isMobile ? 80 : 180;
-            if (owlDist < dialogueTriggerDist) {
+            if (owlDist < dialogueTriggerDist || window.forceOwlDialogue) {
                 owl.dialogueOpacity += (1.0 - owl.dialogueOpacity) * 0.1;
             } else {
                 owl.dialogueOpacity += (0 - owl.dialogueOpacity) * 0.15;
@@ -973,9 +988,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     let mRadius = 10; // rounded corner radius
 
                     // 1-line condensed text for mobile
-                    let mLines = [
-                        "Did you know? I collect tea- Whoot fun! \uD83C\uDF75"
-                    ];
+                    let mLines = [];
+                    if (window.owlDialogueText) {
+                        mLines = window.owlDialogueText.split('\n');
+                    } else {
+                        mLines = [
+                            "Did you know? I collect tea- Whoot fun! 🍵"
+                        ];
+                    }
 
                     // Measure actual rendered text width to size box tightly
                     ctx.font = `600 italic ${mFontSize}px var(--font-sans)`;
@@ -1055,9 +1075,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 } else {
                     // ── DESKTOP: original puffy cloud bubble with downward tail ──
-                    let bw = 220, bh = 220;
+                    let isGamePage = !!window.forceOwlDialogue;
+                    let bw = isGamePage ? 650 : 220;
+                    let bh = isGamePage ? 350 : 220;
                     let bx = Math.max(12, owl.x - bw / 2);
-                    let by = owl.y - 302;
+                    let by = owl.y - (isGamePage ? 430 : 302);
 
                     let drawCloudBubble = (x, y, w, h) => {
                         let cx = x + w / 2;
@@ -1097,47 +1119,78 @@ document.addEventListener('DOMContentLoaded', () => {
                         ctx.closePath();
                     };
 
-                    ctx.save();
-                    ctx.shadowColor = `rgba(12, 7, 5, ${0.3 * op})`;
-                    ctx.shadowBlur = 14;
-                    ctx.shadowOffsetY = 6;
-                    ctx.fillStyle = `rgba(21, 13, 10, ${0.76 * op})`;
-                    drawCloudBubble(bx, by, bw, bh);
-                    ctx.fill();
-                    ctx.restore();
+                    if (!isGamePage) {
+                        ctx.save();
+                        ctx.shadowColor = `rgba(12, 7, 5, ${0.3 * op})`;
+                        ctx.shadowBlur = 14;
+                        ctx.shadowOffsetY = 6;
+                        ctx.fillStyle = `rgba(21, 13, 10, ${0.76 * op})`;
+                        drawCloudBubble(bx, by, bw, bh);
+                        ctx.fill();
+                        ctx.restore();
 
-                    ctx.strokeStyle = `rgba(211, 84, 0, ${0.65 * op})`;
-                    ctx.lineWidth = 1.8;
-                    drawCloudBubble(bx, by, bw, bh);
-                    ctx.stroke();
+                        ctx.strokeStyle = `rgba(211, 84, 0, ${0.65 * op})`;
+                        ctx.lineWidth = 1.8;
+                        drawCloudBubble(bx, by, bw, bh);
+                        ctx.stroke();
+                    }
 
                     ctx.save();
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.textRendering = 'geometricPrecision';
-                    ctx.shadowColor = `rgba(12, 7, 5, ${0.85 * op})`;
-                    ctx.shadowBlur = 3;
-                    ctx.shadowOffsetX = 1;
-                    ctx.shadowOffsetY = 1.2;
-                    ctx.fillStyle = `rgba(245, 166, 35, ${0.98 * op})`;
-                    ctx.font = `600 italic 14px var(--font-sans)`;
+                    if (isGamePage) {
+                        // High visibility neon glow styling for dialogue text
+                        ctx.shadowColor = `rgba(245, 166, 35, ${0.95 * op})`;
+                        ctx.shadowBlur = 8;
+                        ctx.shadowOffsetX = 0;
+                        ctx.shadowOffsetY = 0;
+                        ctx.fillStyle = `rgba(255, 245, 220, ${0.98 * op})`;
+                        ctx.font = `600 14px 'Libre Baskerville', 'Baskerville', 'Playfair Display', 'Georgia', serif`;
+                    } else {
+                        ctx.shadowColor = `rgba(12, 7, 5, ${0.85 * op})`;
+                        ctx.shadowBlur = 3;
+                        ctx.shadowOffsetX = 1;
+                        ctx.shadowOffsetY = 1.2;
+                        ctx.fillStyle = `rgba(245, 166, 35, ${0.98 * op})`;
+                        ctx.font = `600 14px 'Libre Baskerville', 'Baskerville', 'Playfair Display', 'Georgia', serif`;
+                    }
 
-                    let lines = [
-                        "Did you know?",
-                        "I love experimenting",
-                        "around with different",
-                        "sorts of tea in",
-                        "my spare time:",
-                        "white tea, green tea,",
-                        "black tea yellow tea,",
-                        "fruit teas, matcha-",
-                        "you name it!",
-                        "Whoot fun!"
-                    ];
+                    let lines = [];
+                    if (window.owlDialogueText) {
+                        lines = window.owlDialogueText.split('\n');
+                    } else {
+                        lines = [
+                            "Did you know?",
+                            "I love experimenting",
+                            "around with different",
+                            "sorts of tea in",
+                            "my spare time:",
+                            "white tea, green tea,",
+                            "black tea yellow tea,",
+                            "fruit teas, matcha-",
+                            "you name it!",
+                            "Whoot fun!"
+                        ];
+                    }
 
-                    let startY = by + bh / 2 - ((lines.length - 1) * 17) / 2;
-                    for (let i = 0; i < lines.length; i++) {
-                        ctx.fillText(lines[i], bx + bw / 2, startY + i * 17);
+                    if (isGamePage) {
+                        // Position text to the right side of the perched owl with extra horizontal breathing room
+                        ctx.textAlign = 'left';
+                        let textX = owl.x + 65; // shifted to the right to avoid cramming
+                        let textY = owl.y - 12; // align beside head center
+                        let lineH = 19; // line height for 14px text
+                        let startY = textY - ((lines.length - 1) * lineH) / 2;
+                        
+                        for (let i = 0; i < lines.length; i++) {
+                            ctx.fillText(lines[i], textX, startY + i * lineH);
+                        }
+                    } else {
+                        let lineH = 17;
+                        let startY = by + bh / 2 - ((lines.length - 1) * lineH) / 2;
+                        for (let i = 0; i < lines.length; i++) {
+                            ctx.fillText(lines[i], bx + bw / 2, startY + i * lineH);
+                        }
                     }
                     ctx.restore();
                 }
