@@ -197,6 +197,29 @@ strong {
 /* ==========================================
    Navigation Bar
    ========================================== */
+/* Dropdown selector for mobile navigation */
+.nav-dropdown {
+    display: none;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    padding: 8px 14px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    transition: all var(--transition-speed) ease;
+    outline: none;
+}
+
+.nav-dropdown option {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-family: var(--font-sans);
+}
+
 .navbar {
     position: fixed;
     top: 0;
@@ -910,14 +933,11 @@ strong {
     }
 
     .nav-links {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        justify-content: flex-end;
+        display: none;
     }
     
-    .nav-link {
-        font-size: 0.8rem;
+    .nav-dropdown {
+        display: block;
     }
 
     .content-wrapper {
