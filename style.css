@@ -910,7 +910,14 @@ strong {
     }
 
     .nav-links {
-        display: none;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    
+    .nav-link {
+        font-size: 0.8rem;
     }
 
     .content-wrapper {
