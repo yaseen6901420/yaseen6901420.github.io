@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Games - Harry Potter Trivia Quiz</title>
+    <meta name="description" content="An interactive Harry Potter trivia game featuring Hedwig the Owl.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* Quiz specific animations & layouts to maintain rich aesthetic */
+        .quiz-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .owl-bubble {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px 25px;
+            width: 100%;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            position: relative;
+        }
+
+        .owl-bubble::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 0 10px 10px 10px;
+            border-style: solid;
+            border-color: transparent transparent var(--bg-card) transparent;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .option-btn {
+            background: rgba(43, 29, 21, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px 20px;
+            color: var(--text-secondary);
+            font-family: var(--font-sans);
+            font-size: 0.95rem;
+            text-align: left;
+            transition: all 0.25s var(--transition-curve);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: rgba(245, 166, 35, 0.12);
+            border-color: var(--accent-gold);
+            color: var(--text-primary);
+            transform: scale(1.01);
+        }
+
+        .option-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed !important;
+        }
+
+        .option-btn.correct {
+            background: rgba(46, 125, 50, 0.25);
+            border-color: #2e7d32;
+            color: #81c784;
+        }
+
+        .option-btn.incorrect {
+            background: rgba(198, 40, 40, 0.25);
+            border-color: #c62828;
+            color: #e57373;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(12, 7, 5, 0.5);
+            border-radius: 3px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--gradient-accent);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        .difficulty-badge {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .diff-easy { background: rgba(76, 175, 80, 0.15); color: #81c784; border: 1px solid rgba(76, 175, 80, 0.3); }
+        .diff-medium { background: rgba(255, 152, 0, 0.15); color: #ffb74d; border: 1px solid rgba(255, 152, 0, 0.3); }
+        .diff-hard { background: rgba(244, 67, 54, 0.15); color: #e57373; border: 1px solid rgba(244, 67, 54, 0.3); }
+
+        .btn-restart {
+            background: var(--gradient-accent);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 25px;
+            color: #fff;
+            font-family: var(--font-display);
+            font-weight: bold;
+            font-size: 1rem;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .btn-restart:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md), var(--shadow-glow);
+        }
+
+        .option-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 1.5px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+        }
+
+        /* Introduction popup modal overlay with matching theme */
+        .intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(12, 7, 5, 0.95);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            transition: opacity 0.5s ease;
+        }
+
+        .intro-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 40px 30px;
+            max-width: 650px;
+            text-align: center;
+            box-shadow: var(--shadow-lg), var(--shadow-glow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .intro-text {
+            color: rgba(255, 245, 220, 0.98);
+            font-family: 'Libre Baskerville', 'Baskerville', 'Playfair Display', 'Georgia', serif;
+            font-size: 1.5rem;
+            line-height: 1.8;
+            font-weight: 600;
+            text-shadow: 0 0 10px rgba(245, 166, 35, 0.55);
+        }
+
+        .intro-buttons {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .intro-btn {
+            font-family: var(--font-display);
+            font-weight: bold;
+            font-size: 1rem;
+            padding: 14px 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .intro-btn-begin {
+            background: var(--gradient-accent);
+            border: none;
+            color: #fff;
+        }
+
+        .intro-btn-begin:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md), var(--shadow-glow);
+        }
+
+        .intro-btn-back {
+            background: rgba(43, 29, 21, 0.6);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .intro-btn-back:hover {
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+            background: rgba(56, 38, 27, 0.8);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <!-- Introduction Overlay Popup -->
+    <div id="intro-popup" class="intro-overlay">
+        <div class="intro-card">
+            <div class="intro-text">
+                Are you ready to test yourself against the knowledge of the Hogwarts library and the magical world of Harry Potter? Join Hedwig's Trivia Challenge!
+            </div>
+            <div class="intro-buttons">
+                <button id="btn-begin" class="intro-btn intro-btn-begin">Let's begin!</button>
+                <button id="btn-back" class="intro-btn intro-btn-back">No, I would like to go back</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clean Dark Academia Background -->
+    <div class="ocean-background"></div>
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Navigation Header -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <span class="logo-accent">&lt;</span>SY<span class="logo-accent"> /&gt;</span>
+            </a>
+            <nav class="nav-links">
+                <a href="index.html#summary" class="nav-link">Summary</a>
+                <a href="index.html#experience" class="nav-link">Experience</a>
+                <a href="index.html#education" class="nav-link">Education</a>
+                <a href="index.html#skills" class="nav-link">Skills</a>
+                <a href="index.html#projects" class="nav-link">Projects</a>
+                <a href="index.html#awards" class="nav-link">Awards</a>
+                <a href="index.html#publications" class="nav-link">Publications</a>
+                <a href="index.html#media" class="nav-link">Media</a>
+                <a href="#" class="nav-link active">Games</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="content-wrapper">
+        <section id="games" class="section scroll-anim active" style="margin-top: 100px;">
+            <h2 class="section-title">Hedwig's Trivia Challenge</h2>
+            
+            <div class="card games-card" style="min-height: 500px; display: flex; flex-direction: column; justify-content: center; padding: 40px 30px;">
+                <div class="quiz-container">
+                    
+                    <!-- Progress & Difficulty Header -->
+                    <div style="width: 100%; text-align: center; margin-top: -10px;">
+                        <span id="difficulty-badge" class="difficulty-badge diff-easy">Easy</span>
+                        <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;" id="question-progress">Question 1 of 10</div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="progress-bar-container">
+                        <div id="progress-fill" class="progress-bar-fill"></div>
+                    </div>
+
+                    <!-- Speech Bubble / Status Header -->
+                    <div id="question-text" class="owl-bubble">
+                        Look at Hedwig on the branch to see comments! Questions are below.
+                    </div>
+
+                    <!-- Options Grid -->
+                    <div id="options-container" class="options-grid">
+                        <!-- Options injected dynamically -->
+                    </div>
+
+                    <!-- Restart / Action button -->
+                    <div id="action-container" style="display: none;">
+                        <button id="btn-action" class="btn-restart">Play Again</button>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <p>&copy; 2026 Shafayet Yaseen. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Script -->
+    <script src="script.js"></script>
+    <script>
+        // Trivia pool organized by 10 progressive difficulty levels (1 to 10)
+        const triviaPool = {
+            1: [ // Easy (Level 1)
+                {
+                    q: "In Harry's first year, what is the name of his pet owl who delivers mail?",
+                    options: ["Pigwidgeon", "Hermes", "Hedwig", "Errol", "Crookshanks"],
+                    correct: 2
+                },
+                {
+                    q: "Which Hogwarts house is represented by a majestic lion?",
+                    options: ["Slytherin", "Ravenclaw", "Hufflepuff", "Gryffindor", "Durmstrang"],
+                    correct: 3
+                }
+            ],
+            2: [ // Easy-Medium (Level 2)
+                {
+                    q: "What do witches and wizards call a person who is unable to perform magic?",
+                    options: ["Muggle", "Squib", "Mudblood", "Nomaj", "Mundungus"],
+                    correct: 0
+                },
+                {
+                    q: "What is the name of the secret platform where students board the Hogwarts Express?",
+                    options: ["Platform 9", "Platform 9 3/4", "Platform 10", "Platform 7 1/2", "King's Cross Main"],
+                    correct: 1
+                }
+            ],
+            3: [ // Familiar (Level 3)
+                {
+                    q: "Who is the legendary headmaster of Hogwarts at the beginning of the series?",
+                    options: ["Severus Snape", "Gilderoy Lockhart", "Albus Dumbledore", "Phineas Nigellus", "Armando Dippet"],
+                    correct: 2
+                },
+                {
+                    q: "Which spell is standard for disarming an opposing wizard?",
+                    options: ["Stupefy", "Expelliarmus", "Avada Kedavra", "Crucio", "Impedimenta"],
+                    correct: 1
+                }
+            ],
+            4: [ // Medium (Level 4)
+                {
+                    q: "What is the core substance inside Harry Potter's wand?",
+                    options: ["Dragon Heartstring", "Unicorn Hair", "Veela Hair", "Thestral Hair", "Phoenix Feather"],
+                    correct: 4
+                },
+                {
+                    q: "Who was the Defence Against the Dark Arts teacher during Harry’s second year?",
+                    options: ["Remus Lupin", "Severus Snape", "Gilderoy Lockhart", "Quirinus Quirrell", "Alastor Moody"],
+                    correct: 2
+                }
+            ],
+            5: [ // Medium-Advanced (Level 5)
+                {
+                    q: "What is the full name of Gryffindor's house ghost, Nearly Headless Nick?",
+                    options: ["Sir Nicholas de Mimsy-Porpington", "Sir Nicholas of Gryffindor", "Nick the Decapitated", "Sir Nicolas de Valois", "Nicholas the Screaming"],
+                    correct: 0
+                },
+                {
+                    q: "What is the name of the wizarding newspaper based in London?",
+                    options: ["The Quibbler", "The Daily Prophet", "The Wizard's Voice", "Transfiguration Today", "The Practical Potioneer"],
+                    correct: 1
+                }
+            ],
+            6: [ // Advanced (Level 6)
+                {
+                    q: "In the books, which ingredient is used to revive those who have been petrified by the Basilisk?",
+                    options: ["Bezoar", "Mandrake Root", "Fluxweed", "Knotgrass", "Boomslang Skin"],
+                    correct: 1
+                },
+                {
+                    q: "What is the name of the eccentric magazine edited by Luna Lovegood's father?",
+                    options: ["The Daily Prophet", "The Quibbler", "The Sentinel", "Spellbound", "Rumors & Riddles"],
+                    correct: 1
+                }
+            ],
+            7: [ // Advanced-Hard (Level 7)
+                {
+                    q: "What color of sparks does Harry send into the air to signal Fleur Delacour's distress in the maze?",
+                    options: ["Blue", "Gold", "Green", "Red", "Silver"],
+                    correct: 3
+                },
+                {
+                    q: "Who was the first person to raise their wand in tribute following Albus Dumbledore's fall?",
+                    options: ["Harry Potter", "Minerva McGonagall", "Hermione Granger", "Ron Weasley", "Fawkes the Phoenix"],
+                    correct: 1
+                }
+            ],
+            8: [ // Hard (Level 8)
+                {
+                    q: "What is the name of the potion that grants temporary extreme good luck to the drinker?",
+                    options: ["Amortentia", "Polyjuice Potion", "Felix Felicis", "Veritaserum", "Elixir of Life"],
+                    correct: 2
+                },
+                {
+                    q: "What false action supposedly earned Peter Pettigrew his Order of Merlin, First Class?",
+                    options: ["Spying on Lord Voldemort", "Defending Hogwarts' Gates", "Dying while confronting Sirius Black", "Saving the Minister for Magic", "Capturing Death Eaters"],
+                    correct: 2
+                }
+            ],
+            9: [ // Very Hard (Level 9)
+                {
+                    q: "According to the books, how old was the alchemist Nicholas Flamel when the Sorcerer's Stone was destroyed?",
+                    options: ["550", "665", "666", "712", "990"],
+                    correct: 1
+                },
+                {
+                    q: "What is the name of the ancient, dusty publication Ron Weasley reads to study owl care?",
+                    options: ["The Owl Bible", "Care of Owls Weekly", "Flying with Mail", "Owl Care Handbook", "The Handbook of Do-it-Yourself Owl Care"],
+                    correct: 4
+                }
+            ],
+            10: [ // Impossible (Level 10)
+                {
+                    q: "Which creatures join the Battle of Hogwarts by charging out of the kitchens armed with knives?",
+                    options: ["Centauri", "The House-elves", "Goblins", "Acromantulas", "Hippogriffs"],
+                    correct: 1
+                },
+                {
+                    q: "What is the numerical code dialed in the telephone booth to access the guest entrance of the Ministry of Magic?",
+                    options: ["7-2-3-4-9", "9-3-4-2-1", "6-2-4-4-2", "6-6-6-6-6", "3-9-4-1-8"],
+                    correct: 2
+                }
+            ]
+        };
+
+        let currentLevel = 1;
+        let selectedQuestions = [];
+        let score = 0;
+        let optionLetters = ["A", "B", "C", "D", "E"];
+
+        const badge = document.getElementById("difficulty-badge");
+        const progressText = document.getElementById("question-progress");
+        const progressFill = document.getElementById("progress-fill");
+        const questionText = document.getElementById("question-text");
+        const optionsContainer = document.getElementById("options-container");
+        const actionContainer = document.getElementById("action-container");
+        const btnAction = document.getElementById("btn-action");
+
+        // Overlay element bindings
+        const introPopup = document.getElementById("intro-popup");
+        const btnBegin = document.getElementById("btn-begin");
+        const btnBack = document.getElementById("btn-back");
+
+        // Handle popup workflow
+        btnBegin.addEventListener("click", () => {
+            introPopup.style.opacity = "0";
+            setTimeout(() => {
+                introPopup.style.display = "none";
+                initializeQuiz();
+            }, 500);
+        });
+
+        btnBack.addEventListener("click", () => {
+            window.location.href = "index.html";
+        });
+
+        // Helper to push text to the background interactive Hedwig dialogue bubble
+        function setOwlSpeech(text) {
+            window.owlDialogueText = text;
+            window.forceOwlDialogue = true;
+        }
+
+        function initializeQuiz() {
+            currentLevel = 1;
+            score = 0;
+            selectedQuestions = [];
+            
+            // Randomly pick one question from each of the 10 difficulty levels to guarantee different sets
+            for (let level = 1; level <= 10; level++) {
+                const questionsAtLevel = triviaPool[level];
+                const randomIndex = Math.floor(Math.random() * questionsAtLevel.length);
+                selectedQuestions.push(questionsAtLevel[randomIndex]);
+            }
+
+            actionContainer.style.display = "none";
+            setOwlSpeech("Welcome to my chambers!\nLet us test your knowledge\nof the books!");
+            displayQuestion();
+        }
+
+        function displayQuestion() {
+            const currentQuestion = selectedQuestions[currentLevel - 1];
+            
+            // Update difficulty badge styling
+            badge.innerText = `Level ${currentLevel}: ` + (
+                currentLevel <= 2 ? "Easy" :
+                currentLevel <= 4 ? "Familiar" :
+                currentLevel <= 6 ? "Medium" :
+                currentLevel <= 8 ? "Hard" :
+                currentLevel === 9 ? "Very Hard" : "Impossible"
+            );
+            badge.className = `difficulty-badge ` + (
+                currentLevel <= 3 ? "diff-easy" :
+                currentLevel <= 7 ? "diff-medium" : "diff-hard"
+            );
+
+            // Update Progress Header & Bar
+            progressText.innerText = `Question ${currentLevel} of 10`;
+            progressFill.style.width = `${((currentLevel - 1) / 10) * 100}%`;
+
+            // Display question on main quiz card
+            questionText.innerHTML = `${currentQuestion.q}`;
+
+            // Render options
+            optionsContainer.innerHTML = "";
+            currentQuestion.options.forEach((opt, idx) => {
+                const btn = document.createElement("button");
+                btn.className = "option-btn";
+                btn.innerHTML = `
+                    <span><strong>${optionLetters[idx]}.</strong> ${opt}</span>
+                    <span class="option-indicator">${optionLetters[idx]}</span>
+                `;
+                btn.addEventListener("click", () => handleAnswer(idx));
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(selectedIndex) {
+            const currentQuestion = selectedQuestions[currentLevel - 1];
+            const buttons = optionsContainer.querySelectorAll(".option-btn");
+            
+            // Disable all buttons immediately
+            buttons.forEach(btn => btn.disabled = true);
+
+            const correctIndex = currentQuestion.correct;
+            
+            if (selectedIndex === correctIndex) {
+                score++;
+                buttons[selectedIndex].classList.add("correct");
+                setOwlSpeech("Splendid!\nThat is correct.\n*Happy Hoot!*");
+            } else {
+                buttons[selectedIndex].classList.add("incorrect");
+                buttons[correctIndex].classList.add("correct");
+                setOwlSpeech("Alas!\nThat is incorrect.\nTry hard next time!");
+            }
+
+            // Move to next step after delay
+            setTimeout(() => {
+                if (currentLevel < 10) {
+                    currentLevel++;
+                    displayQuestion();
+                } else {
+                    finishQuiz();
+                }
+            }, 3000);
+        }
+
+        function finishQuiz() {
+            badge.innerText = "Completed";
+            badge.className = "difficulty-badge diff-easy";
+            progressText.innerText = "Result";
+            progressFill.style.width = "100%";
+            optionsContainer.innerHTML = "";
+
+            let classification = "";
+            let phrase = "";
+            let owlPhrase = "";
+
+            // Calculate Wizarding World Rank/Classification
+            if (score === 10) {
+                classification = "Order of Merlin, First Class 👑";
+                phrase = "Incredible! You answered all 10 levels correctly. The spirits of the Hogwarts founders themselves salute you!";
+                owlPhrase = "Order of Merlin!\nA perfect score!\n*Proud Hoot!*";
+            } else if (score >= 8) {
+                classification = "Auror Elite ⚡";
+                phrase = "Superb job! Your magical knowledge is exceptionally sharp. You easily qualify to be an Auror!";
+                owlPhrase = "Superb job!\nAuror Grade Rank!\n*Happy Hoot!*";
+            } else if (score >= 6) {
+                classification = "Hogwarts Graduate (O.W.L. Level) 📜";
+                phrase = "Well done! You have passed your examinations with honors. Hermione Granger would be proud of your study habits.";
+                owlPhrase = "Passed with honors!\nO.W.L. Level Rank!\n*Friendly Hoot!*";
+            } else if (score >= 4) {
+                classification = "Ministry of Magic Clerk 💼";
+                phrase = "A decent score, but there is still room for improvement. Spend some more time studying in the library.";
+                owlPhrase = "Decent score!\nSpend time in the\nlibrary! *Hoot!*";
+            } else {
+                classification = "Muggle / Squib 🧹";
+                phrase = "Alas! You might want to retake some classes. Perhaps your owl got lost with the letters? Let's hit the books and try again.";
+                owlPhrase = "Alas!\nHit the library and\ntry again! *Hoot!*";
+            }
+
+            questionText.innerHTML = `You scored <strong>${score} out of 10</strong>.<br><br><strong>Rank:</strong> ${classification}<br><br>${phrase}`;
+            setOwlSpeech(owlPhrase);
+            actionContainer.style.display = "block";
+        }
+
+        btnAction.addEventListener("click", initializeQuiz);
+    </script>
+</body>
+</html>
