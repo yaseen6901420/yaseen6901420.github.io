@@ -1220,32 +1220,31 @@
             renderChronicles(combinedArticles);
         }
 
-        btnSync.addEventListener("click", fetchLatestNews);
-
-
-        // Set dynamic, randomized physics jokes inside the header panels on load/refresh
-        const jokes = [
-            { heading: "Schroedinger's Cat", text: 'Schroedinger asks: "Where is my Cat?" — "Wanted: Dead and Alive."' },
-            { heading: "Atoms & Trust", text: "Why can't you trust atoms? Because they make up everything!" },
-            { heading: "Heisenberg's Speed", text: 'Officer: "Do you know how fast you were going?" Heisenberg: "No, but I know exactly where I am!"' },
-            { heading: "Neutron's Tab", text: 'A neutron walks into a bar and asks for a drink. The bartender says, "For you, no charge!"' },
-            { heading: "Photon's Luggage", text: 'The bellhop asks the photon if it needs help with luggage. "No thanks, I\'m traveling light!"' },
-            { heading: "Time Travel", text: "What do we want? Time travel! When do we want it? It's relative!" }
-        ];
-        const randomJoke = jokes[Math.floor(Math.random() * jokes.length)];
-        const jokeCell = document.getElementById("physics-joke-cell");
-        if (jokeCell) {
-            jokeCell.innerHTML = `
-                <div class="panel-heading">${randomJoke.heading}</div>
-                <div style="font-size: 0.8rem; line-height: 1.3;">${randomJoke.text}</div>
-            `;
+        function selectRandomJoke() {
+            const jokes = [
+                { heading: "Schroedinger's Cat", text: 'Schroedinger asks: "Where is my Cat?" — "Wanted: Dead and Alive."' },
+                { heading: "Atoms & Trust", text: "Why can't you trust atoms? Because they make up everything!" },
+                { heading: "Heisenberg's Speed", text: 'Officer: "Do you know how fast you were going?" Heisenberg: "No, but I know exactly where I am!"' },
+                { heading: "Neutron's Tab", text: 'A neutron walks into a bar and asks for a drink. The bartender says, "For you, no charge!"' },
+                { heading: "Photon's Luggage", text: 'The bellhop asks the photon if it needs help with luggage. "No thanks, I\'m traveling light!"' },
+                { heading: "Time Travel", text: "What do we want? Time travel! When do we want it? It's relative!" }
+            ];
+            const randomJoke = jokes[Math.floor(Math.random() * jokes.length)];
+            const jokeCell = document.getElementById("physics-joke-cell");
+            if (jokeCell) {
+                jokeCell.innerHTML = `
+                    <div class="panel-heading">${randomJoke.heading}</div>
+                    <div style="font-size: 0.8rem; line-height: 1.3;">${randomJoke.text}</div>
+                `;
+            }
         }
 
         async function fetchScienceFact() {
             const factCell = document.getElementById("science-fact-cell");
             if (!factCell) return;
             try {
-                const res = await fetch("https://numbersapi.com/random/trivia?json");
+                // Switched to uselessfacts.jsph.pl which has robust HTTPS/SSL certificates to avoid fetch failure
+                const res = await fetch(`https://uselessfacts.jsph.pl/api/v2/facts/random?language=en&nocache=${Date.now()}`);
                 if (res.ok) {
                     const data = await res.json();
                     factCell.innerText = data.text;
@@ -1257,9 +1256,16 @@
             }
         }
 
+        btnSync.addEventListener("click", () => {
+            fetchLatestNews();
+            fetchScienceFact();
+            selectRandomJoke();
+        });
+
         // Initial populate via API
         fetchLatestNews();
         fetchScienceFact();
+        selectRandomJoke();
     </script>
 </body>
 </html>
