@@ -42,6 +42,19 @@
                 <a href="#media" class="nav-link">Media</a>
                 <a href="games.html" class="nav-link">Games</a>
             </nav>
+            <!-- Mobile Navigation Dropdown Menu -->
+            <select class="nav-dropdown" onchange="if(this.value) { window.location.href = this.value; }">
+                <option value="" disabled selected>Menu...</option>
+                <option value="#summary">Summary</option>
+                <option value="#experience">Experience</option>
+                <option value="#education">Education</option>
+                <option value="#skills">Skills</option>
+                <option value="#projects">Projects</option>
+                <option value="#awards">Awards</option>
+                <option value="#publications">Publications</option>
+                <option value="#media">Media</option>
+                <option value="games.html">Games 🎮</option>
+            </select>
         </div>
     </header>
 
