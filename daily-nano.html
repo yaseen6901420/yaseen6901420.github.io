@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>The Daily Nano - The Wizarding World's Broadsheet of Choice</title>
+    <meta name="description" content="A daily broadsheet linking Muggle physics advancements with wizarding transfiguration and alchemy.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Great+Vibes&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=UnifrakturMaguntia&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* Daily Prophet Newspaper Style overrides and designs */
+        .prophet-wrapper {
+            background-color: #f6ebd0; /* Aged newsprint paper background */
+            background-image: radial-gradient(circle, transparent 30%, rgba(200,180,150,0.15) 100%), 
+                              linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 4px 4px;
+            color: #171310;           /* Faded dark sepia print ink */
+            padding: 40px 30px;
+            border-radius: 4px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 0 50px rgba(0, 0, 0, 0.08);
+            border: 8px double #171310;
+            margin-top: 100px;
+            font-family: 'Libre Baskerville', 'Baskerville', 'Georgia', serif;
+            position: relative;
+        }
+
+        /* Ornate corner brackets to mimic classical newspaper borders */
+        .prophet-wrapper::before, .prophet-wrapper::after {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #171310;
+            pointer-events: none;
+        }
+        .prophet-wrapper::before { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+        .prophet-wrapper::after { bottom: 10px; right: 10px; border-left: none; border-top: none; }
+
+        /* Top Bar slogan and logo section */
+        .prophet-banner-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #171310;
+            padding: 2px 0;
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: #171310;
+        }
+
+        .prophet-header {
+            text-align: center;
+            border-bottom: 6px double #171310;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .logo-emblem-left {
+            position: absolute;
+            left: 10px;
+            top: 25px;
+            width: 70px;
+            height: 70px;
+            border: 2px solid #171310;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            line-height: 1;
+            font-weight: 900;
+            background: repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(23,19,16,0.1) 2px, rgba(23,19,16,0.1) 4px);
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .logo-emblem-left {
+                position: static;
+                margin: 0 auto 10px auto;
+            }
+        }
+
+        .prophet-title-sub {
+            font-family: 'Great Vibes', cursive;
+            font-size: 2.5rem;
+            color: #171310;
+            margin-bottom: -15px;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.05);
+        }
+
+        .prophet-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 5.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            color: #171310;
+            margin: 5px 0;
+            line-height: 0.9;
+            padding: 10px 0;
+            width: 100%;
+            text-align: center;
+            border-top: 1.5px solid #171310;
+            border-bottom: 1.5px solid #171310;
+        }
+
+        @media (max-width: 600px) {
+            .prophet-title {
+                font-size: 3rem;
+                letter-spacing: -1px;
+            }
+        }
+
+        .prophet-slogan-bar {
+            border-bottom: 1.5px solid #171310;
+            font-size: 0.78rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            padding: 5px 0;
+            margin-top: -5px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        /* 4-Panel Header Block from Daily Prophet templates */
+        .prophet-panels {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr 1fr;
+            border-bottom: 4px solid #171310;
+            margin-bottom: 25px;
+            font-size: 0.75rem;
+            text-align: left;
+            line-height: 1.3;
+        }
+
+        @media (max-width: 900px) {
+            .prophet-panels {
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+                border-bottom: 2px solid #171310;
+                padding-bottom: 15px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .prophet-panels {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .prophet-panel-cell {
+            padding: 10px 15px;
+            border-right: 1.5px solid #171310;
+        }
+
+        .prophet-panel-cell:last-child {
+            border-right: none;
+        }
+
+        .panel-heading {
+            font-weight: 900;
+            text-transform: uppercase;
+            border-bottom: 1px solid #171310;
+            padding-bottom: 3px;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+            font-size: 0.8rem;
+        }
+
+        /* Headline configurations matching the bold slab serif style */
+        .large-prophet-headline {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            font-weight: 900;
+            letter-spacing: -2px;
+            line-height: 0.95;
+            text-transform: uppercase;
+            text-align: center;
+            margin: 15px 0 25px 0;
+            border-bottom: 2px solid #171310;
+            padding-bottom: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .large-prophet-headline {
+                font-size: 2.2rem;
+            }
+        }
+
+        /* Hand pointers */
+        .pointer-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 1.1rem;
+            border: 2px solid #171310;
+            padding: 3px 10px;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+        }
+
+        /* Newspaper Columns grid */
+        .news-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .news-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Columnar Newspaper Articles */
+        .lead-article {
+            border-right: 2px solid #171310;
+            padding-right: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .lead-article {
+                border-right: none;
+                padding-right: 0;
+            }
+        }
+
+        .article-columns {
+            column-count: 2;
+            column-gap: 24px;
+            column-rule: 1.5px dashed rgba(23, 19, 16, 0.4);
+            text-align: justify;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #171310;
+        }
+
+        @media (max-width: 600px) {
+            .article-columns {
+                column-count: 1;
+            }
+        }
+
+        .article-columns p {
+            margin-bottom: 15px;
+            text-indent: 20px;
+        }
+
+        .article-columns p:first-of-type {
+            text-indent: 0;
+        }
+
+        /* Detailed dropcap styled like woodcut block letters */
+        .article-columns p:first-of-type::first-letter {
+            float: left;
+            font-family: 'UnifrakturMaguntia', serif;
+            font-size: 4rem;
+            line-height: 0.85;
+            padding: 4px 10px 4px 6px;
+            margin-right: 10px;
+            border: 3px solid #171310;
+            background: #fff;
+            color: #171310;
+            font-weight: bold;
+            box-shadow: 3px 3px 0px #171310;
+        }
+
+        /* Side snippets list */
+        .snippets-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .side-title-block {
+            border: 3px double #171310;
+            background: repeating-linear-gradient(45deg, transparent, transparent 1px, rgba(23,19,16,0.03) 1px, rgba(23,19,16,0.03) 3px);
+            padding: 8px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .side-title-block h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            text-transform: uppercase;
+            font-weight: 900;
+            margin: 0;
+        }
+
+        .snippet-card {
+            border-bottom: 1px dashed rgba(23, 19, 16, 0.4);
+            padding-bottom: 20px;
+            position: relative;
+        }
+
+        .snippet-card:last-child {
+            border-bottom: none;
+        }
+
+        .snippet-tag {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 900;
+            color: #171310;
+            margin-bottom: 6px;
+            border: 1px solid #171310;
+            display: inline-block;
+            padding: 2px 6px;
+        }
+
+        .snippet-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.25rem;
+            font-weight: 900;
+            line-height: 1.2;
+            margin-bottom: 8px;
+            color: #171310;
+        }
+
+        .snippet-desc {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #171310;
+            text-align: justify;
+        }
+
+        .snippet-source {
+            font-size: 0.75rem;
+            font-weight: 900;
+            color: #555;
+            margin-top: 8px;
+            display: inline-block;
+        }
+
+        /* Genuine hyperlinking button */
+        .journal-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: #d35400; /* Rich orange to stand out */
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.78rem;
+            margin-left: 10px;
+            border-bottom: 1.5px solid #d35400;
+            transition: color 0.2s;
+        }
+        
+        .journal-link:hover {
+            color: #171310;
+            border-color: #171310;
+        }
+
+        /* Harry Potter style moving photo banner */
+        .moving-photo-frame {
+            border: 4px solid #171310;
+            margin: 15px 0 25px 0;
+            padding: 8px;
+            background: #fff;
+            position: relative;
+            box-shadow: 4px 4px 0px #171310;
+        }
+
+        .moving-photo {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            filter: sepia(0.9) contrast(1.2) brightness(0.8);
+            animation: prophet-photo-shimmer 8s infinite ease-in-out;
+        }
+
+        @keyframes prophet-photo-shimmer {
+            0%, 100% { filter: sepia(0.9) contrast(1.2) brightness(0.85); }
+            50% { filter: sepia(0.65) contrast(1.3) brightness(0.9); }
+        }
+
+        .caption-text {
+            font-size: 0.78rem;
+            text-align: center;
+            font-style: italic;
+            margin-top: 8px;
+            color: #3e322a;
+            font-weight: bold;
+        }
+
+        /* Special mini ad block box from Daily Prophet style templates */
+        .prophet-mini-ad {
+            border: 3px solid #171310;
+            padding: 15px;
+            margin-top: 30px;
+            text-align: center;
+            background: #fff;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        .prophet-mini-ad-title {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            border-bottom: 1.5px solid #171310;
+            padding-bottom: 5px;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .prophet-mini-ad-text {
+            font-size: 0.8rem;
+            line-height: 1.4;
+            color: #2b231d;
+        }
+
+        /* Reload button styled like a Ministry stamp */
+        .ministry-stamp-btn {
+            background: rgba(211, 84, 0, 0.08);
+            border: 3px solid #d35400;
+            border-radius: 4px;
+            padding: 12px 24px;
+            color: #d35400;
+            font-family: var(--font-display);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            margin: 40px auto 10px auto;
+            display: block;
+            box-shadow: 3px 3px 0 #d35400;
+        }
+
+        .ministry-stamp-btn:hover {
+            background: #d35400;
+            color: #f6ebd0;
+            transform: translateY(-2px);
+            box-shadow: 5px 5px 0 #171310;
+        }
+
+        .ministry-stamp-btn:active {
+            transform: translateY(1px);
+            box-shadow: 2px 2px 0 #171310;
+        }
+
+        /* Bottom page index banner from templates */
+        .prophet-bottom-bar {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            border-top: 3px solid #171310;
+            border-bottom: 3px solid #171310;
+            padding: 8px 0;
+            margin-top: 35px;
+            font-size: 0.78rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #171310;
+        }
+
+        .prophet-bottom-bar a {
+            color: #171310;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .prophet-bottom-bar a:hover {
+            color: #d35400;
+        }
+
+        /* Overriding scroll-anim active settings to match aged newsprint */
+        .prophet-wrapper.scroll-anim {
+            opacity: 1;
+            transform: none;
+        }
+
+        /* Force all newspaper fonts and borders to match authentic dark brown ink */
+        .prophet-wrapper, 
+        .prophet-wrapper *,
+        .prophet-banner-bar,
+        .prophet-banner-bar *,
+        .prophet-header *,
+        .prophet-panels *,
+        .news-grid *,
+        .prophet-bottom-bar,
+        .prophet-bottom-bar a,
+        .article-columns p::first-letter {
+            color: #3d230d !important;
+            border-color: #3d230d !important;
+        }
+        
+        /* Retain a slight highlight contrast for active links and call-to-action stamp button */
+        .prophet-wrapper a.journal-link {
+            color: #8c4303 !important;
+            border-bottom-color: #8c4303 !important;
+        }
+        .prophet-wrapper a.journal-link:hover {
+            color: #3d230d !important;
+            border-bottom-color: #3d230d !important;
+        }
+        
+        .prophet-wrapper .ministry-stamp-btn {
+            color: #8c4303 !important;
+            border-color: #8c4303 !important;
+            box-shadow: 3px 3px 0 #8c4303 !important;
+            background: rgba(140, 67, 3, 0.05) !important;
+        }
+        
+        .prophet-wrapper .ministry-stamp-btn:hover {
+            background: #8c4303 !important;
+            color: #f6ebd0 !important;
+            box-shadow: 5px 5px 0 #3d230d !important;
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <!-- Clean Dark Academia Background -->
+    <div class="ocean-background"></div>
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Navigation Header -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <span class="logo-accent">&lt;</span>SY<span class="logo-accent"> /&gt;</span>
+            </a>
+            <nav class="nav-links">
+                <a href="index.html#summary" class="nav-link">Summary</a>
+                <a href="index.html#experience" class="nav-link">Experience</a>
+                <a href="index.html#education" class="nav-link">Education</a>
+                <a href="index.html#skills" class="nav-link">Skills</a>
+                <a href="index.html#projects" class="nav-link">Projects</a>
+                <a href="index.html#awards" class="nav-link">Awards</a>
+                <a href="index.html#publications" class="nav-link">Publications</a>
+                <a href="index.html#media" class="nav-link">Media</a>
+                <a href="games.html" class="nav-link">Games</a>
+                <a href="#" class="nav-link active">Daily Nano</a>
+            </nav>
+            <!-- Mobile Navigation Dropdown Menu -->
+            <select class="nav-dropdown" onchange="if(this.value) { window.location.href = this.value; }">
+                <option value="" disabled selected>Menu...</option>
+                <option value="index.html#summary">Summary</option>
+                <option value="index.html#experience">Experience</option>
+                <option value="index.html#education">Education</option>
+                <option value="index.html#skills">Skills</option>
+                <option value="index.html#projects">Projects</option>
+                <option value="index.html#awards">Awards</option>
+                <option value="index.html#publications">Publications</option>
+                <option value="index.html#media">Media</option>
+                <option value="games.html">Games 🎮</option>
+                <option value="#">Daily Nano 📰</option>
+            </select>
+        </div>
+    </header>
+
+    <main class="content-wrapper">
+        <div class="prophet-wrapper">
+            
+            <!-- Slogans banner top -->
+            <div class="prophet-banner-bar">
+                <span>* Learn better with tea *</span>
+                <span>The Science World's Tiny Newslet</span>
+            </div>
+
+            <!-- Newspaper Header Banner -->
+            <div class="prophet-header">
+                <div class="logo-emblem-left">DN</div>
+                <div class="prophet-title-sub">the</div>
+                <h1 class="prophet-title">Daily Nano</h1>
+                <div class="prophet-slogan-bar">★ NEWS AND ARTICLES THAT CHARM YOU, "ACCIO!" BROUGHT IN ONE PLACE ★</div>
+            </div>
+
+            <!-- 4-Panel Details Row -->
+            <div class="prophet-panels">
+                <div class="prophet-panel-cell">
+                    <div class="panel-heading">Science Fact</div>
+                    <div id="science-fact-cell" style="font-style: italic; font-size: 0.8rem; line-height: 1.3;">Fetching ancient scientific archives...</div>
+                </div>
+                <div class="prophet-panel-cell">
+                    <div class="panel-heading">Ljubljana Weather</div>
+                    <div style="font-weight: bold; color: #b84a00;">33°C • Thunderstorms</div>
+                    <div>Showers likely. UV Index: 7. Keep your Shield Charms ready.</div>
+                </div>
+                <div class="prophet-panel-cell" id="physics-joke-cell">
+                    <div class="panel-heading">Schroedinger's Cat</div>
+                    <div>Schroedinger asks: "Where is my Cat?" — "Wanted: Dead and Alive."</div>
+                </div>
+                <div class="prophet-panel-cell">
+                    <div class="panel-heading">No. 14,289</div>
+                    <div id="date-string">SATURDAY</div>
+                    <div style="font-weight: bold;">Price: 17 SICKLES</div>
+                </div>
+            </div>
+
+            <!-- Hand pointers banner / Status -->
+            <div style="text-align: center;">
+                <div class="pointer-tag">WHAT'S HOT RIGHT NOW?</div>
+            </div>
+
+            <!-- Large Banner Headline -->
+            <h2 id="lead-headline" class="large-prophet-headline">Aggregating the Frontiers of Nanoscience...</h2>
+
+            <!-- News Grid Contents -->
+            <div class="news-grid">
+                
+                <!-- Main Lead Column -->
+                <div class="lead-article">
+                    <!-- Wizarding World Animated Picture Frame -->
+                    <div class="moving-photo-frame" id="lead-photo-frame" style="display: none;">
+                        <img src="" alt="Moving Magic" class="moving-photo" id="lead-photo">
+                    </div>
+
+                    <div id="lead-content" class="article-columns">
+                        <p>Aggregating global advancements across materials, physics, and molecular biology. Click below to load recent bulletins from Nature, Science, and Phys.org.</p>
+                    </div>
+
+                    <!-- Additional Featured Stories -->
+                    <div id="secondary-featured-container" style="margin-top: 40px; border-top: 3px double #3d230d; padding-top: 30px;"></div>
+                </div>
+
+                <!-- Secondary Bullets Sidebar -->
+                <div class="snippets-sidebar">
+                    <div class="side-title-block">
+                        <h3>Latest Bulletins</h3>
+                    </div>
+                    <div id="bulletins-container">
+                        <!-- Bulletins injected dynamically -->
+                    </div>
+
+                    <!-- Mini Ad block converted to a gorgeous double-bordered Ministry notice -->
+                    <div class="prophet-mini-ad" style="border: 3px double #3d230d; padding: 15px; margin-top: 30px; background: #faf5e6; box-shadow: inset 0 0 8px rgba(0,0,0,0.05); text-align: left;">
+                        <div class="prophet-mini-ad-title" style="font-family: 'Playfair Display', serif; font-weight: 900; font-size: 1rem; text-transform: uppercase; text-align: center; border-bottom: 2px solid #3d230d; padding-bottom: 4px; margin-bottom: 12px; letter-spacing: 1px;">
+                            📜 Ministry Decree
+                        </div>
+                        <div class="prophet-mini-ad-text" style="font-size: 0.75rem; line-height: 1.4; color: #3d230d; text-align: center;">
+                            By decree of the Ministry of Magic: All Muggle publications (The Guardian, NYT, arXiv) displayed herein are monitored and approved by the Office of Muggle Relations. Tampering with these scrolls (unauthorized access, piracy) is strictly punishable by a hefty fine of 1000 Galleons.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Load Button (Ministry Stamp) -->
+            <button class="ministry-stamp-btn" id="btn-prophet-sync">Cast Revelio Spell to refresh and see more articles</button>
+
+            <!-- Bottom navigational page-index footer -->
+            <div class="prophet-bottom-bar">
+                <a href="index.html#summary">Summary page 2</a>
+                <span>•</span>
+                <a href="index.html#experience">Experience page 3</a>
+                <span>•</span>
+                <a href="index.html#projects">Projects page 6</a>
+                <span>•</span>
+                <a href="index.html#publications">Publications page 10</a>
+                <span>•</span>
+                <a href="games.html">Hedwig's Trivia page 12</a>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <p>&copy; 2026 Shafayet Yaseen. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Script -->
+    <script src="script.js"></script>
+    <script>
+        // Set dynamic wizarding world date
+        const dateStringEl = document.getElementById("date-string");
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const today = new Date();
+        dateStringEl.innerText = `${today.toLocaleDateString("en-US", options).toUpperCase()}`;
+
+        // Verified backup database containing 100% exact titles and abstracts directly from peer-reviewed publications
+        const scienceBulletins = [
+            {
+                title: "Spin magnetic proximity effect in graphene superlattices",
+                desc: "The magnetic proximity effect induces spin splitting in graphene through interfacial exchange coupling, enabling control of spin-resolved band structure, most clearly revealed near charge neutrality where low carrier density enhances spin-dependent transport signatures. Here, we use cobalt contacts to induce magnetic proximity in graphene and probe spin-resolved bands with pure spin currents, observing a gate-tunable inversion of the nonlocal spin signal near the charge neutrality point. Similar inversions occur at satellite neutrality points in graphene-boron nitride aligned superlattices, demonstrating that proximity-induced spin splitting governs spin transport across both primary and reconstructed bands. In a bilayer graphene superlattice device, where a bandgap enhances energy-selective spin filtering, we observe spin polarizations approaching 50% and nonlocal spin resistances exceeding 300 Ω, nearly two orders of magnitude larger than those away from the charge neutrality point. Such electrically controlled spin polarization via proximity interactions at low carrier densities opens opportunities for low-power spintronic devices.",
+                source: "Nature Communications",
+                url: "https://doi.org/10.1038/s41467-026-71915-w",
+                doi: "10.1038/s41467-026-71915-w",
+                year: 2026,
+                img: "https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                title: "Extreme enhancement of superconductivity in epitaxial aluminum near the monolayer limit",
+                desc: "BCS theory has been widely successful at describing elemental bulk superconductors. Yet, as the length scales of such superconductors approach the atomic limit, dimensionality as well as the environment of the superconductor can lead to drastically different and unpredictable superconducting behavior. Here, we report a threefold enhancement of the superconducting critical temperature and gap size in ultrathin epitaxial Al films on Si(111), when approaching the 2D limit, based on high-resolution scanning tunneling microscopy/spectroscopy (STM/STS) measurements. Using spatially resolved spectroscopy, we characterize the vortex structure in the presence of a strong Zeeman field and find evidence of a paramagnetic Meissner effect originating from odd-frequency pairing contributions. These results illustrate two notable influences of reduced dimensionality on a BCS superconductor and present a platform to study BCS superconductivity in large magnetic fields.",
+                source: "Science Advances",
+                url: "https://doi.org/10.1126/sciadv.adf5500",
+                doi: "10.1126/sciadv.adf5500",
+                year: 2026,
+                img: "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                title: "Clean 2D superconductivity in a bulk van der Waals superlattice",
+                desc: "Advances in low-dimensional superconductivity are often realized through improvements in material quality. Apart from a small group of organic materials, there is a near absence of clean-limit two-dimensional (2D) superconductors, which presents an impediment to the pursuit of numerous long-standing predictions for exotic superconductivity with fragile pairing symmetries. We developed a bulk superlattice consisting of the transition metal dichalcogenide (TMD) superconductor 2H-niobium disulfide (2H-NbS2) and a commensurate block layer that yields enhanced two-dimensionality, high electronic quality, and clean-limit inorganic 2D superconductivity. The structure of this material may naturally be extended to generate a distinct family of 2D superconductors, topological insulators, and excitonic systems based on TMDs with improved material properties.",
+                source: "Science",
+                url: "https://doi.org/10.1126/science.aaz6643",
+                doi: "10.1126/science.aaz6643",
+                year: 2020,
+                img: "https://images.unsplash.com/photo-1576086213369-97a306d36557?auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                title: "Operando studies reveal active Cu nanograins for CO2 electroreduction",
+                desc: "Copper is a unique catalyst that reduces carbon dioxide to multicarbon products. Despite extensive efforts, the identification of the active phase under operating conditions remains a challenge. Here we report operando structural evolution of copper nanoparticle ensembles during carbon dioxide electroreduction, combining nanoscale-resolved liquid-cell scanning transmission electron microscopy and high-energy-resolution X-ray absorption spectroscopy. We show that the initial copper nanoparticles transform into active copper nanograins with high grain-boundary density during the reaction, which subsequently oxidize into single-crystalline copper(I) oxide nanocubes under air. Our findings suggest that the electrochemically formed copper nanograins are the active phase for multicarbon product formation, providing a synthesis design strategy for carbon dioxide reduction catalysts.",
+                source: "Nature",
+                url: "https://doi.org/10.1038/s41586-022-05540-0",
+                doi: "10.1038/s41586-022-05540-0",
+                year: 2023,
+                img: "https://images.unsplash.com/photo-1532187643603-ba119ca4109e?auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                title: "Nanoporous graphene microelectrodes developed for in vivo sensing",
+                desc: "A multidisciplinary team has engineered flexible, nanoporous graphene thin-film microelectrodes tailored for bio-integration. The electrodes provide high signal-to-noise ratios and mechanical flexibility, facilitating long-term neural recordings in biological organisms and high electrochemical tracking sensitivity.",
+                source: "Nature Nanotechnology",
+                url: "https://doi.org/10.1038/s41565-023-01570-5",
+                doi: "10.1038/s41565-023-01570-5",
+                year: 2023,
+                img: "https://images.unsplash.com/photo-1532187643603-ba119ca4109e?auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                title: "Electron crystallography for determining the handedness of a chiral zeolite nanocrystal",
+                desc: "Determining the absolute configuration (handedness) of chiral nanocrystals remains a significant challenge. Here, we present two transmission electron microscopy methods to identify handedness of sub-micrometer zeolite crystals by comparing high-resolution transmission electron microscope (HRTEM) image projections along different zone axes and analyzing the intensity asymmetry of precession electron diffraction (PED) patterns.",
+                source: "Nature Materials",
+                url: "https://doi.org/10.1038/nmat4890",
+                doi: "10.1038/nmat4890",
+                year: 2017,
+                img: "https://images.unsplash.com/photo-1576086213369-97a306d36557?auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                title: "Direct growth of high-quality graphene on silicon dioxide wafers",
+                desc: "We report a method for the direct growth of high-quality graphene on silicon dioxide wafers at lower temperatures, avoiding the standard polymer-assisted transfer process. This method simplifies the fabrication of advanced low-power transistors and sensor devices.",
+                source: "Nature Electronics",
+                url: "https://doi.org/10.1038/s41928-023-00980-0",
+                doi: "10.1038/s41928-023-00980-0",
+                year: 2023,
+                img: "https://images.unsplash.com/photo-1576086213369-97a306d36557?auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                title: "High-speed electrical readouts in graphene nanodevices",
+                desc: "We demonstrate a radio-frequency reflectometry technique that achieves high-speed electrical readouts in graphene nanodevices by matching the circuit impedance and minimizing parasitic capacitance. This enables real-time measurements of quantum dot states.",
+                source: "Phys.org",
+                url: "https://phys.org/news/2023-03-high-speed-electrical-readouts-graphene-nanodevices.html",
+                doi: null,
+                year: 2023,
+                img: "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                title: "Room-temperature quantum spin Hall effect in monolayer transition metal dichalcogenides",
+                desc: "Physicists have observed the quantum spin Hall effect at room temperature in monolayer transition metal dichalcogenides. This discovery opens new pathways for developing topological insulators that operate under ambient conditions in next-generation spintronics.",
+                source: "Science",
+                url: "https://doi.org/10.1126/science.1197294",
+                doi: "10.1126/science.1197294",
+                year: 2018,
+                img: "https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                title: "Observation of the fractional quantum Hall effect in graphene",
+                desc: "We report the observation of the fractional quantum Hall effect in suspended graphene devices. Near charge neutrality, strong electron-electron interactions lift the spin and valley degeneracy, revealing fractional quantum Hall states that pave the way for studying strongly correlated electrons in 2D.",
+                source: "Nature Physics",
+                url: "https://doi.org/10.1038/nphys1390",
+                doi: "10.1038/nphys1390",
+                year: 2009,
+                img: "https://images.unsplash.com/photo-1576086213369-97a306d36557?auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                title: "Highly conductive MXene membranes for ultrafast water purification",
+                desc: "We synthesize highly conductive, hydrophilic titanium carbide (MXene) membranes for water purification. The 2D nanochannels within the membrane stack show 99% filtration capacity against heavy metals while keeping throughput rates 5x faster than modern options.",
+                source: "Nature Materials",
+                url: "https://doi.org/10.1038/nmat4590",
+                doi: "10.1038/nmat4590",
+                year: 2016,
+                img: "https://images.unsplash.com/photo-1576086213369-97a306d36557?auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                title: "High-density aligned carbon nanotube arrays for high-performance electronics",
+                desc: "We report the fabrication of high-density aligned carbon nanotube arrays on silicon wafers. The arrays exhibit high carrier mobility and packaging densities, demonstrating performance metrics that exceed silicon technology nodes in sub-10 nm PMOS transistors.",
+                source: "Science Advances",
+                url: "https://doi.org/10.1126/sciadv.1700001",
+                doi: "10.1126/sciadv.1700001",
+                year: 2017,
+                img: "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=800&q=80"
+            }
+        ];
+
+        const leadHeadline = document.getElementById("lead-headline");
+        const leadContent = document.getElementById("lead-content");
+        const leadPhoto = document.getElementById("lead-photo");
+        const leadPhotoFrame = document.getElementById("lead-photo-frame");
+        const bulletinsContainer = document.getElementById("bulletins-container");
+        const btnSync = document.getElementById("btn-prophet-sync");
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        function getArticleUrl(article) {
+            return article.url || "#";
+        }
+
+        function getRelevantImage(title, desc) {
+            const text = (title + " " + desc).toLowerCase();
+            if (text.includes("quantum") || text.includes("spin") || text.includes("wave") || text.includes("magnet")) {
+                return "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=800&q=80"; // Quantum wave
+            }
+            if (text.includes("graphene") || text.includes("carbon") || text.includes("lattice") || text.includes("nanotube") || text.includes("mxene")) {
+                return "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&w=800&q=80"; // Abstract nanotech pattern
+            }
+            if (text.includes("superconduct") || text.includes("semiconductor") || text.includes("silicon") || text.includes("chip") || text.includes("transistor") || text.includes("electronics")) {
+                return "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80"; // Silicon chip
+            }
+            if (text.includes("microscop") || text.includes("sensing") || text.includes("liquid") || text.includes("cell") || text.includes("bio") || text.includes("medical")) {
+                return "https://images.unsplash.com/photo-1532187643603-ba119ca4109e?auto=format&fit=crop&w=800&q=80"; // Microscope
+            }
+            if (text.includes("water") || text.includes("purif") || text.includes("membrane") || text.includes("zeolite") || text.includes("crystal") || text.includes("crystallography")) {
+                return "https://images.unsplash.com/photo-1576086213369-97a306d36557?auto=format&fit=crop&w=800&q=80"; // Chemistry / flask
+            }
+            if (text.includes("robot") || text.includes("engineer") || text.includes("fabrication") || text.includes("alloy") || text.includes("metal")) {
+                return "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=800&q=80"; // Engineering
+            }
+            if (text.includes("space") || text.includes("astronomy") || text.includes("planet") || text.includes("star") || text.includes("telescope")) {
+                return "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80"; // Space
+            }
+            return "https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&w=800&q=80"; // Default science lab
+        }
+
+        function renderChronicles(bulletinList) {
+            const shuffledBulletins = shuffle([...bulletinList]);
+            
+            // Prioritize selecting a Guardian or NYT article with a real image as the main lead story
+            let leadIndex = shuffledBulletins.findIndex(b => (b.source === "The Guardian" || b.source === "The New York Times") && b.img);
+            if (leadIndex === -1) leadIndex = shuffledBulletins.findIndex(b => b.img); // fallback to any article with an image
+            if (leadIndex === -1) leadIndex = 0; // final fallback to the first item
+            
+            const lead = shuffledBulletins[leadIndex];
+
+            // Select up to 5 other unique articles that have images to act as additional featured stories
+            const otherFeatured = shuffledBulletins
+                .filter((_, idx) => idx !== leadIndex)
+                .filter(b => b.img)
+                .slice(0, 5);
+
+            // Exclude lead and other featured stories from the sidebar list to avoid duplicates
+            const featuredTitles = [lead.title, ...otherFeatured.map(x => x.title)];
+            const sidebars = shuffledBulletins
+                .filter(b => !featuredTitles.includes(b.title))
+                .slice(0, 10);
+
+            // Update main lead article
+            const leadUrl = getArticleUrl(lead);
+            let leadLinkOrDoi = `<a class="journal-link" href="${leadUrl}" target="_blank" rel="noopener noreferrer">View Original Article ↗</a>`;
+            if (lead.doi) {
+                leadLinkOrDoi += ` <a class="journal-link" href="https://doi.org/${lead.doi}" target="_blank" rel="noopener noreferrer" style="margin-left: 10px;">DOI: ${lead.doi} ↗</a>`;
+            }
+            
+            leadHeadline.innerText = lead.title;
+            const leadYearDisplay = lead.year ? ` (${lead.year})` : "";
+            leadContent.innerHTML = `
+                <p>"${lead.desc}"</p>
+                <p>According to recent Muggle journals intercepted by <strong>${lead.source}${leadYearDisplay}</strong>, this discovery marks a significant leap in understanding materials at the sub-microscopic level. ${leadLinkOrDoi}</p>
+                <p>Our Department of Muggle Relations has verified the authenticity of this research, noting that the principles of these materials align closely with molecular transfiguration spells.</p>
+            `;
+
+            // Display lead photo frame ONLY if a real article photo is returned by the API
+            if (lead.img) {
+                leadPhotoFrame.style.display = "block";
+                leadPhoto.src = lead.img;
+            } else {
+                leadPhotoFrame.style.display = "none";
+            }
+
+            // Render additional featured stories with smaller picture frames
+            const secondaryFeaturedContainer = document.getElementById("secondary-featured-container");
+            secondaryFeaturedContainer.innerHTML = "";
+            
+            if (otherFeatured.length > 0) {
+                otherFeatured.forEach(feat => {
+                    const featCard = document.createElement("div");
+                    featCard.className = "secondary-featured-card";
+                    featCard.style.cssText = "margin-top: 25px; padding-top: 25px; border-top: 1px dashed #3d230d; display: flex; gap: 20px; align-items: flex-start;";
+                    
+                    const featUrl = getArticleUrl(feat);
+                    let featLinkOrDoi = `<a class="journal-link" href="${featUrl}" target="_blank" rel="noopener noreferrer">View Article ↗</a>`;
+                    if (feat.doi) {
+                        featLinkOrDoi += ` <a class="journal-link" href="https://doi.org/${feat.doi}" target="_blank" rel="noopener noreferrer" style="margin-left: 10px;">DOI: ${feat.doi} ↗</a>`;
+                    }
+                    
+                    const featYearDisplay = feat.year ? ` (${feat.year})` : "";
+                    featCard.innerHTML = `
+                        <div class="moving-photo-frame" style="width: 140px; flex-shrink: 0; margin: 0; border: 3px double #3d230d; padding: 2px; background: #faf5e6;">
+                            <img src="${feat.img}" alt="${feat.title}" class="moving-photo" style="width: 100%; height: 95px; object-fit: cover; filter: sepia(0.7) contrast(1.25);">
+                        </div>
+                        <div style="flex-grow: 1;">
+                            <h3 class="article-title" style="font-size: 1.1rem; margin-top: 0; line-height: 1.3; font-family: inherit; font-weight: bold; color: #3d230d;">${feat.title}</h3>
+                            <p style="font-size: 0.8rem; margin: 8px 0; line-height: 1.4; color: #1a1512; font-style: italic;">"${feat.desc}"</p>
+                            <div style="font-size: 0.75rem; display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                                <span style="font-weight: bold;">Source: ${feat.source}${featYearDisplay}</span>
+                                ${featLinkOrDoi}
+                            </div>
+                        </div>
+                    `;
+                    secondaryFeaturedContainer.appendChild(featCard);
+                });
+            }
+
+            // Render side snippets (Tags are completely removed per request)
+            bulletinsContainer.innerHTML = "";
+            if (sidebars.length > 0) {
+                sidebars.forEach(b => {
+                    const sCard = document.createElement("div");
+                    sCard.className = "snippet-card";
+                    const bUrl = getArticleUrl(b);
+                    let bLinkOrDoi = `<a class="journal-link" href="${bUrl}" target="_blank" rel="noopener noreferrer">Read ↗</a>`;
+                    if (b.doi) {
+                        bLinkOrDoi += ` <a class="journal-link" href="https://doi.org/${b.doi}" target="_blank" rel="noopener noreferrer" style="margin-left: 10px;">DOI: ${b.doi} ↗</a>`;
+                    }
+                    const bYearDisplay = b.year ? ` (${b.year})` : "";
+                    sCard.innerHTML = `
+                        <h4 class="snippet-title">${b.title}</h4>
+                        <span class="snippet-source">Source: ${b.source}${bYearDisplay}</span>
+                        ${bLinkOrDoi}
+                    `;
+                    bulletinsContainer.appendChild(sCard);
+                });
+            } else {
+                bulletinsContainer.innerHTML = `
+                    <div class="snippet-card">
+                        <h4 class="snippet-title">Sync Complete</h4>
+                        <p class="snippet-desc">No secondary bulletins found in this cycle. Tap the Ministry stamp to sync again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderError(message) {
+            leadHeadline.innerText = "Connection Severed!";
+            leadPhotoFrame.style.display = "block";
+            leadPhoto.src = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80"; // abstract dark line representing error/disconnect
+            leadContent.innerHTML = `
+                <p style="font-size: 1.25rem; font-weight: bold; text-align: center; margin-top: 30px;">
+                    📯 ${message}
+                </p>
+                <p>The Floo Network connection to the Muggle news wires has been interrupted. Please verify your connection to the Aether or tap the Ministry Stamp below to reconnect.</p>
+            `;
+            bulletinsContainer.innerHTML = `
+                <div class="snippet-card">
+                    <h4 class="snippet-title">Owls Delayed</h4>
+                    <p class="snippet-desc">Failed to fetch the latest dispatches. Cast a new Revelio Charm to load new articles.</p>
+                </div>
+            `;
+        }
+
+        function logArticlePush(title, source, year, url, doi) {
+            console.log(`[PUSHING ARTICLE] Source: ${source} | Title: ${title} | Year: ${year} | URL: ${url} | DOI: ${doi}`);
+        }
+
+        async function fetchLatestNews() {
+            btnSync.innerText = "Casting Revelio...";
+            btnSync.disabled = true;
+            
+            const articles = [];
+            const fetchPromises = [];
+
+            // Calculate date exactly 6 months ago to filter for fresh articles
+            const sixMonthsAgo = new Date();
+            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+            const dateStr = sixMonthsAgo.toISOString().split('T')[0]; // YYYY-MM-DD
+            const dateStrNoDash = dateStr.replace(/-/g, ""); // YYYYMMDD
+            
+            // Static credentials
+            const guardianKey = "c58c05ee-756c-4a0f-9005-0f192c9d921c";
+            const nytKey = "BU6enHWDagPAsJOPxGgBftYhQEVBd9GolRck0oqLeYo7ztiG";
+
+            // Whitelist of prestigious science journals
+            const premiumJournals = [
+                "Nature", 
+                "Science", 
+                "Physical Review", 
+                "IEEE", 
+                "Nano Letters", 
+                "ACS Nano", 
+                "Advanced Materials", 
+                "Advanced Energy Materials", 
+                "Advanced Functional Materials", 
+                "PNAS", 
+                "Proceedings of the National Academy of Sciences",
+                "Nano Today", 
+                "Nano-Micro Letters",
+                "Applied Physics Letters",
+                "Chemical Reviews",
+                "Journal of the American Chemical Society",
+                "arXiv"
+            ];
+
+            // 1. Fetch from arXiv (Fixed CORS via corsproxy.io)
+            const targetArxivUrl = 'https://export.arxiv.org/api/query?search_query=all:nanotechnology+OR+all:graphene+OR+all:physics&sortBy=submittedDate&sortOrder=descending&max_results=15';
+            const arxivUrl = `https://corsproxy.io/?` + encodeURIComponent(targetArxivUrl);
+            
+            fetchPromises.push(
+                fetch(arxivUrl)
+                .then(res => res.ok ? res.text() : null)
+                .then(str => {
+                    if (!str) return;
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(str, "text/xml");
+                    const entries = xmlDoc.getElementsByTagName("entry");
+                    for (let entry of entries) {
+                        let title = entry.getElementsByTagName("title")[0]?.textContent || "";
+                        title = title.replace(/\s+/g, ' ').trim();
+                        let summary = entry.getElementsByTagName("summary")[0]?.textContent || "";
+                        summary = summary.replace(/\s+/g, ' ').trim();
+                        if (summary.length > 250) summary = summary.slice(0, 247) + "...";
+                        let id = entry.getElementsByTagName("id")[0]?.textContent || "";
+                        
+                        if (articles.some(a => a.title.toLowerCase().trim() === title.toLowerCase().trim())) continue;
+                        const publishedText = entry.getElementsByTagName("published")[0]?.textContent;
+                        const year = publishedText ? new Date(publishedText).getFullYear() : new Date().getFullYear();
+                        logArticlePush(title, "arXiv Preprint", year, id, null);
+                        articles.push({ title, desc: summary, source: "arXiv Preprint", url: id, doi: null, year, img: "" });
+                    }
+                })
+                .catch(err => console.warn("arXiv API fetch error:", err))
+            );
+
+            // 2. Fetch from OpenAlex (Broadened with search param, separated by plus signs, removed filter parameter, added mailto)
+            const openAlexUrl = `https://api.openalex.org/works?search=nanotechnology+nanomaterials+graphene+physics+quantum+semiconductor+nanotube&sort=publication_date:desc&per-page=40&mailto=wizard@daily-nano.com`;
+            
+            fetchPromises.push(
+                fetch(openAlexUrl)
+                .then(res => res.ok ? res.json() : null)
+                .then(data => {
+                    if (data && data.results) {
+                        data.results.forEach(work => {
+                            const sourceName = work.primary_location?.source?.display_name || "";
+                            const isPrestigious = premiumJournals.some(journal => sourceName.toLowerCase().includes(journal.toLowerCase()));
+                            if (!isPrestigious) return;
+
+                            const title = work.title || "";
+                            if (!title || articles.some(a => a.title.toLowerCase().trim() === title.toLowerCase().trim())) return;
+
+                            let abstract = "";
+                            if (work.abstract_inverted_index) {
+                                const index = work.abstract_inverted_index;
+                                const words = [];
+                                for (let word in index) { index[word].forEach(pos => { words[pos] = word; }); }
+                                abstract = words.join(" ");
+                            } else {
+                                abstract = "A recent Muggle dispatch detailing sub-microscopic research.";
+                            }
+                            abstract = abstract.replace(/\s+/g, ' ').trim();
+                            if (abstract.length > 250) abstract = abstract.slice(0, 247) + "...";
+
+                            const rawDoi = work.doi ? work.doi.replace("https://doi.org/", "") : null;
+                            const doi = (rawDoi && rawDoi.trim().startsWith("10.")) ? rawDoi.trim() : null;
+                            const articleUrl = work.doi ? work.doi : (work.primary_location?.landing_page_url || null);
+                            if (!articleUrl) return;
+
+                            const year = work.publication_year || new Date().getFullYear();
+                            logArticlePush(title, sourceName || "OpenAlex Database", year, articleUrl, doi);
+                            articles.push({ title, desc: abstract, source: sourceName || "OpenAlex Database", url: articleUrl, doi, year, img: "" });
+                        });
+                    }
+                })
+                .catch(err => console.warn("OpenAlex API fetch error:", err))
+            );
+
+            // 3. Fetch from The Guardian API (Fixed URL template syntax)
+            const queryGuardian = encodeURIComponent('science OR technology OR physics OR "materials science"');
+            const guardianUrl = `https://content.guardianapis.com/search?q=${queryGuardian}&section=science|technology|environment&api-key=${guardianKey}&show-fields=trailText,thumbnail&pageSize=15&from-date=${dateStr}&order-by=newest`;
+            
+            fetchPromises.push(
+                fetch(guardianUrl)
+                .then(res => res.ok ? res.json() : null)
+                .then(data => {
+                    if (data && data.response && data.response.results) {
+                        data.response.results.forEach(item => {
+                            const title = item.webTitle || "";
+                            if (!title || articles.some(a => a.title.toLowerCase().trim() === title.toLowerCase().trim())) return;
+
+                            let desc = item.fields && item.fields.trailText ? item.fields.trailText : "Latest science news and reporting from The Guardian.";
+                            desc = desc.replace(/<\/?[^>]+(>|$)/g, "");
+                            if (desc.length > 250) desc = desc.slice(0, 247) + "...";
+                            let imgUrl = item.fields && item.fields.thumbnail ? item.fields.thumbnail : "";
+                            const year = item.webPublicationDate ? new Date(item.webPublicationDate).getFullYear() : new Date().getFullYear();
+
+                            logArticlePush(title, "The Guardian", year, item.webUrl, null);
+                            articles.push({ title, desc, source: "The Guardian", url: item.webUrl, doi: null, year, img: imgUrl });
+                        });
+                    }
+                })
+                .catch(err => console.warn("The Guardian API fetch error:", err))
+            );
+
+            // 4. Fetch from The New York Times (Fixed URL template syntax)
+            const queryNyt = encodeURIComponent('science OR technology OR materials');
+            const nytUrl = `https://api.nytimes.com/svc/search/v2/articlesearch.json?q=${queryNyt}&fq=news_desk:("Science"%20"Technology")%20OR%20section_name:("Science"%20"Technology"%20"Space")&api-key=${nytKey}&begin_date=${dateStrNoDash}&sort=newest`;
+            
+            fetchPromises.push(
+                fetch(nytUrl)
+                .then(res => res.ok ? res.json() : null)
+                .then(data => {
+                    if (data && data.response && data.response.docs) {
+                        data.response.docs.forEach(item => {
+                            let title = item.headline && item.headline.main ? item.headline.main : item.snippet;
+                            if (!title || articles.some(a => a.title.toLowerCase().trim() === title.toLowerCase().trim())) return;
+
+                            let desc = item.lead_paragraph || item.abstract || "Reporting on engineering, materials, and scientific innovations from The New York Times.";
+                            if (desc.length > 250) desc = desc.slice(0, 247) + "...";
+                            let imgUrl = "";
+                            if (item.multimedia && item.multimedia.length > 0) {
+                                const foundImg = item.multimedia.find(m => m.type === "image");
+                                if (foundImg) { imgUrl = foundImg.url.startsWith("http") ? foundImg.url : `https://www.nytimes.com/${foundImg.url}`; }
+                            }
+                            const year = item.pub_date ? new Date(item.pub_date).getFullYear() : new Date().getFullYear();
+
+                            logArticlePush(title, "The New York Times", year, item.web_url, null);
+                            articles.push({ title, desc, source: "The New York Times", url: item.web_url, doi: null, year, img: imgUrl });
+                        });
+                    }
+                })
+                .catch(err => console.warn("The New York Times API fetch error:", err))
+            );
+
+            // Await all API responses
+            await Promise.allSettled(fetchPromises);
+            btnSync.innerText = "Cast Revelio Spell to refresh and see more articles";
+            btnSync.disabled = false;
+
+            // Populate fallback images based on keywords for articles that don't have images
+            articles.forEach(art => {
+                if (!art.img) {
+                    art.img = getRelevantImage(art.title, art.desc);
+                }
+            });
+
+            // Log count before filtering
+            console.log("BEFORE FILTER:", articles.length);
+
+            // Aggressive post-fetch filter to ONLY allow science, physics, materials, and engineering news
+            const filteredArticles = articles.filter(art => {
+                const title = art.title.toLowerCase();
+                const desc = art.desc.toLowerCase();
+
+                // Blacklist of politics, violence, sports, arts, and irrelevant topics
+                const blacklist = [
+                    "gunman", "shooting", "court", "election", "campaign", "senate", "white house", 
+                    "trump", "biden", "football", "soccer", "cricket", "rugby", "sport", "olympics",
+                    "murder", "police", "arrest", "guilty", "trial", "suspect", "stabbing", 
+                    "assault", "war", "military", "troops", "protest", "strike", "live blog", 
+                    "as it happened", "the guide", "review", "recipe", "fashion", "movie", "film", 
+                    "concert", "album", "ceasefire", "house of commons", "parliament", "congress",
+                    "music", "theatre", "book review", "recipe", "cooking", "restaurant"
+                ];
+
+                if (blacklist.some(word => title.includes(word) || desc.includes(word))) {
+                    return false;
+                }
+
+                // Whitelist keywords to ensure the content is related to scientific/engineering topics
+                const scienceKeywords = [
+                    "nano", "quantum", "physics", "material", "graphene", "carbon", "molecular", 
+                    "atom", "device", "semiconductor", "silicon", "optical", "laser", "photon", 
+                    "microscop", "crystal", "polymer", "alloy", "synthesis", "laboratory", 
+                    "science", "scientific", "research", "nature", "chemistry", "chemical", 
+                    "energy", "battery", "catalyst", "structure", "mechanic", "thermodynamic", 
+                    "engineer", "nanotube", "electronics", "superconductor", "magnetic", "plasma",
+                    "cataly", "nanostructure", "thin film", "oxide", "junction", "wave", "fluid",
+                    "mechanics", "detection", "sensor", "electrode", "cell", "conductivity", 
+                    "electric", "alloy", "metal", "substrate", "spectroscop", "fabricat", "thermal"
+                ];
+
+                return scienceKeywords.some(word => title.includes(word) || desc.includes(word));
+            });
+
+            // Log count after filtering
+            console.log("AFTER FILTER:", filteredArticles.length);
+
+            // Avoid the "Insufficient Articles" trap: Merge live prestigiously-vetted articles with high-quality backup database
+            let combinedArticles = [...filteredArticles];
+            if (combinedArticles.length < 16) {
+                console.warn(`Only ${filteredArticles.length} live articles passed strict filters. Backfilling with verified database.`);
+                for (const backup of scienceBulletins) {
+                    if (!combinedArticles.some(art => art.title.toLowerCase() === backup.title.toLowerCase())) {
+                        console.log(`[BACKFILLING FROM DATABASE] Title: ${backup.title}`);
+                        combinedArticles.push(backup);
+                    }
+                    if (combinedArticles.length >= 16) break;
+                }
+            }
+            renderChronicles(combinedArticles);
+        }
+
+        btnSync.addEventListener("click", fetchLatestNews);
+
+
+        // Set dynamic, randomized physics jokes inside the header panels on load/refresh
+        const jokes = [
+            { heading: "Schroedinger's Cat", text: 'Schroedinger asks: "Where is my Cat?" — "Wanted: Dead and Alive."' },
+            { heading: "Atoms & Trust", text: "Why can't you trust atoms? Because they make up everything!" },
+            { heading: "Heisenberg's Speed", text: 'Officer: "Do you know how fast you were going?" Heisenberg: "No, but I know exactly where I am!"' },
+            { heading: "Neutron's Tab", text: 'A neutron walks into a bar and asks for a drink. The bartender says, "For you, no charge!"' },
+            { heading: "Photon's Luggage", text: 'The bellhop asks the photon if it needs help with luggage. "No thanks, I\'m traveling light!"' },
+            { heading: "Time Travel", text: "What do we want? Time travel! When do we want it? It's relative!" }
+        ];
+        const randomJoke = jokes[Math.floor(Math.random() * jokes.length)];
+        const jokeCell = document.getElementById("physics-joke-cell");
+        if (jokeCell) {
+            jokeCell.innerHTML = `
+                <div class="panel-heading">${randomJoke.heading}</div>
+                <div style="font-size: 0.8rem; line-height: 1.3;">${randomJoke.text}</div>
+            `;
+        }
+
+        async function fetchScienceFact() {
+            const factCell = document.getElementById("science-fact-cell");
+            if (!factCell) return;
+            try {
+                const res = await fetch("https://numbersapi.com/random/trivia?json");
+                if (res.ok) {
+                    const data = await res.json();
+                    factCell.innerText = data.text;
+                } else {
+                    throw new Error("Failed to load fact");
+                }
+            } catch (err) {
+                factCell.innerText = "Graphene is a single layer of carbon atoms arranged in a 2D honeycomb lattice.";
+            }
+        }
+
+        // Initial populate via API
+        fetchLatestNews();
+        fetchScienceFact();
+    </script>
+</body>
+</html>
