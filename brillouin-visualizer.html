@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Brillouin Zone & Reciprocal Lattice Visualizer</title>
+    
+    <!-- Fonts & CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Three.js for 3D visualization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- Chart.js for 2D Band Structure Plot -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            background-color: #05070c;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(10, 15, 30, 0.95);
+            border-bottom: 1px solid rgba(226, 135, 67, 0.2);
+        }
+
+        .visualizer-container {
+            display: grid;
+            grid-template-columns: 320px 1fr 360px;
+            height: calc(100vh - 64px);
+            margin-top: 64px;
+            gap: 15px;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 1200px) {
+            .visualizer-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+                height: auto;
+                overflow-y: auto;
+            }
+        }
+
+        /* Glass Panel Styling */
+        .glass-panel {
+            background: rgba(10, 15, 30, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 135, 67, 0.25);
+            border-radius: 8px;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .panel-title {
+            font-family: 'Libre Baskerville', serif;
+            font-size: 1.3rem;
+            color: #e28743;
+            margin-top: 0;
+            margin-bottom: 5px;
+            border-bottom: 1px solid rgba(226, 135, 67, 0.2);
+            padding-bottom: 8px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .select-input {
+            background: #0f172a;
+            color: #e2e8f0;
+            border: 1px solid rgba(226, 135, 67, 0.3);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .select-input:focus {
+            outline: none;
+            border-color: #e28743;
+        }
+
+        .material-meta {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid rgba(148, 163, 184, 0.05);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .material-meta-title {
+            font-weight: bold;
+            color: #e28743;
+            font-size: 13px;
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .slider-header span {
+            color: #94a3b8;
+        }
+
+        .slider-header .value {
+            color: #e28743;
+            font-weight: bold;
+        }
+
+        .slider-input {
+            width: 100%;
+            accent-color: #e28743;
+            cursor: pointer;
+        }
+
+        .btn-toggle-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-toggle {
+            flex: 1;
+            padding: 8px;
+            background: #0f172a;
+            color: #e2e8f0;
+            border: 1px solid rgba(226, 135, 67, 0.3);
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-size: 12px;
+        }
+
+        .btn-toggle.active {
+            background: #e28743;
+            color: #05070c;
+            border-color: #e28743;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #94a3b8;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-label input {
+            accent-color: #e28743;
+        }
+
+        .vector-box {
+            font-family: monospace;
+            font-size: 11px;
+            color: #94a3b8;
+            background: #090d16;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid rgba(148, 163, 184, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .kpoint-btn {
+            padding: 4px 8px;
+            background: #0f172a;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 4px;
+            color: #e2e8f0;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .kpoint-btn.active {
+            background: #ef4444;
+            color: white;
+            border-color: #ef4444;
+        }
+
+        .kpoints-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .kpoint-card {
+            background: rgba(30, 41, 59, 0.25);
+            border: 1px solid rgba(226, 135, 67, 0.1);
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .kpoint-card .title {
+            font-weight: bold;
+            color: #e28743;
+        }
+
+        .kpoint-card .value {
+            font-family: monospace;
+            color: #94a3b8;
+        }
+
+        .canvas-area {
+            flex: 1;
+            height: 100%;
+            position: relative;
+            border: 1px solid rgba(226, 135, 67, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .canvas-overlay {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(10, 15, 30, 0.85);
+            border: 1px solid rgba(226, 135, 67, 0.2);
+            padding: 10px 14px;
+            border-radius: 6px;
+            pointer-events: none;
+            font-size: 11px;
+            color: #94a3b8;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .canvas-overlay .title {
+            font-weight: bold;
+            color: #e28743;
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+
+        .legend-card {
+            background: rgba(10, 15, 30, 0.4);
+            border-left: 3px solid #e28743;
+            padding: 10px;
+            border-radius: 0 6px 6px 0;
+            font-size: 11.5px;
+            color: #94a3b8;
+            line-height: 1.4;
+        }
+
+        /* Tabs and Concepts Styling */
+        .tutorial-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(226, 135, 67, 0.2);
+            margin-bottom: 8px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            padding: 6px 12px;
+            font-size: 11px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .tab-btn.active {
+            color: #e28743;
+            border-bottom-color: #e28743;
+        }
+
+        .tutorial-content {
+            font-size: 11.5px;
+            line-height: 1.5;
+            color: #94a3b8;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .tutorial-title {
+            font-weight: bold;
+            color: #e28743;
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+
+        .tutorial-box {
+            background: rgba(30, 41, 59, 0.2);
+            border: 1px solid rgba(226, 135, 67, 0.1);
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 10px;
+        }
+        
+        .transformation-box {
+            font-family: monospace;
+            font-size: 10.5px;
+            color: #94a3b8;
+            background: #090d16;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid rgba(226, 135, 67, 0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .trans-arrow {
+            color: #e28743;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <div class="ocean-background"></div>
+
+    <!-- Navigation Header -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <span class="logo-accent">&lt;</span>SY<span class="logo-accent"> /&gt;</span>
+            </a>
+            <nav class="nav-links">
+                <a href="index.html#summary" class="nav-link">Summary</a>
+                <a href="index.html#experience" class="nav-link">Experience</a>
+                <a href="index.html#education" class="nav-link">Education</a>
+                <a href="index.html#skills" class="nav-link">Skills</a>
+                <a href="index.html#projects" class="nav-link">Projects</a>
+                <a href="index.html#awards" class="nav-link">Awards</a>
+                <a href="index.html#publications" class="nav-link">Publications</a>
+                <a href="index.html#media" class="nav-link">Media</a>
+                <a href="games.html" class="nav-link">Games</a>
+                <a href="daily-nano.html" class="nav-link">Daily Nano</a>
+                <a href="brillouin-visualizer.html" class="nav-link active">Brillouin Zone</a>
+            </nav>
+            <select class="nav-dropdown" onchange="if(this.value) { window.location.href = this.value; }">
+                <option value="" disabled>Menu...</option>
+                <option value="index.html#summary">Summary</option>
+                <option value="index.html#experience">Experience</option>
+                <option value="index.html#education">Education</option>
+                <option value="index.html#skills">Skills</option>
+                <option value="index.html#projects">Projects</option>
+                <option value="index.html#awards">Awards</option>
+                <option value="index.html#publications">Publications</option>
+                <option value="index.html#media">Media</option>
+                <option value="games.html">Games 🎮</option>
+                <option value="daily-nano.html">Daily Nano 📰</option>
+                <option value="brillouin-visualizer.html" selected>Brillouin Zone 🌌</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- Main Visualizer Dashboard -->
+    <div class="visualizer-container">
+        
+        <!-- Left Panel: Controls -->
+        <div class="glass-panel">
+            <h2 class="panel-title">Structure Controls</h2>
+            
+            <div class="form-group">
+                <label>Select Crystal Material</label>
+                <select id="material-select" class="select-input">
+                    <option value="silicon">Silicon (FCC Bravais)</option>
+                    <option value="iron">Iron (BCC)</option>
+                    <option value="graphene">Graphene (Hexagonal 2D)</option>
+                </select>
+            </div>
+
+            <div id="material-meta-card" class="material-meta">
+                <div class="material-meta-title" id="meta-title">Silicon (FCC Bravais)</div>
+                <div id="meta-system">Bravais: Cubic (FCC)</div>
+                <div id="meta-sg">Space Group: Fd-3m (No. 227)</div>
+                <div id="meta-gap">Band Gap: ~0.61 eV</div>
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span>Lattice constant a:</span>
+                    <span class="value" id="lbl-lattice-a">5.43 Å</span>
+                </div>
+                <input type="range" id="slider-lattice-a" class="slider-input" min="2.5" max="6.0" step="0.01" value="5.43">
+            </div>
+
+            <div class="form-group">
+                <label>View Mode</label>
+                <div class="btn-toggle-group">
+                    <button id="btn-view-real" class="btn-toggle">Real Space</button>
+                    <button id="btn-view-recip" class="btn-toggle active">Reciprocal BZ</button>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <label class="checkbox-label" id="lbl-toggle-atoms">
+                    <input type="checkbox" id="chk-show-atoms" checked>
+                    Show Atoms
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="chk-show-bonds" checked>
+                    Show Bonds/Unit Cell
+                </label>
+            </div>
+
+            <div class="legend-card" id="legend-explanation">
+                <strong>Reciprocal BZ:</strong> Computes the Wigner-Seitz primitive cell (1st Brillouin Zone) around $\Gamma(0,0,0)$ via convex polyhedron plane clipping. Overlay shows SeeK-path segments.
+            </div>
+
+            <!-- Solid State Physics Tutorials Section for Absolute Beginners -->
+            <div class="tutorial-box">
+                <h3 class="panel-title" style="font-size: 11px; margin-bottom: 8px;">Solid State Physics Guide</h3>
+                <div class="tutorial-tabs">
+                    <button class="tab-btn active" onclick="switchTutorialTab('real-space', this)">Real Space</button>
+                    <button class="tab-btn" onclick="switchTutorialTab('recip-space', this)">Reciprocal</button>
+                    <button class="tab-btn" onclick="switchTutorialTab('bands', this)">Bands</button>
+                </div>
+                <div id="tutorial-text" class="tutorial-content">
+                    <div class="tutorial-title">Real Space & Lattice</div>
+                    A crystal is a repeating pattern of atoms in physical space (Real Space). The unit cell is the smallest repeating block. The lattice constant <em>a</em> defines the unit cell dimension in Ångströms (1 Å = 10⁻¹⁰ meters).
+                </div>
+            </div>
+
+            <!-- Transformation visualization guide card -->
+            <div class="tutorial-box">
+                <h3 class="panel-title" style="font-size: 11px; margin-bottom: 8px;">Lattice Transformation Guide</h3>
+                <div class="transformation-box">
+                    <div><strong>Real Space (Positions)</strong></div>
+                    <div id="trans-real-text">Lattice constant: a = 5.43 Å</div>
+                    <div class="trans-arrow">↓ Fourier Transform (Inverse relation) ↓</div>
+                    <div><strong>Reciprocal Space (Wave vectors)</strong></div>
+                    <div id="trans-recip-text">Reciprocal scale: 2π/a = 1.157 Å⁻¹</div>
+                    <div style="font-size: 9.5px; margin-top: 4px; line-height: 1.3; color: #94a3b8;">
+                        • Expanding in real space (increasing a) squeezes reciprocal space.<br/>
+                        • Compressing in real space expands reciprocal space.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Panel: 3D Canvas + 2D Plot Container stacked vertically -->
+        <div style="display: flex; flex-direction: column; gap: 15px; height: 100%;">
+            <div class="canvas-area" id="canvas-container" style="flex: 2; min-height: 400px;">
+                <div class="canvas-overlay">
+                    <div class="title">Visual Guide</div>
+                    <div>• Left-drag to rotate</div>
+                    <div>• Scroll to zoom</div>
+                    <div>• Right-drag to pan</div>
+                </div>
+            </div>
+            <!-- 2D Electronic Band Structure Plot -->
+            <div class="glass-panel" style="flex: 1.1; min-height: 250px; padding: 12px; position: relative;">
+                <h3 class="panel-title" style="font-size: 11px; margin-bottom: 2px;">Electronic Band Structure (E - E_F)</h3>
+                <div style="width: 100%; height: calc(100% - 25px); position: relative;">
+                    <canvas id="band-structure-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Data Summary -->
+        <div class="glass-panel" style="justify-content: flex-start;">
+            <h2 class="panel-title">Physics & Symmetry</h2>
+            
+            <div class="form-group" id="recip-vectors-section">
+                <label>Reciprocal Vectors (Å⁻¹)</label>
+                <div class="vector-box">
+                    <div id="recip-b1">b1: [-1.157, 1.157, 1.157]</div>
+                    <div id="recip-b2">b2: [1.157, -1.157, 1.157]</div>
+                    <div id="recip-b3">b3: [1.157, 1.157, -1.157]</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>SeeK-path High-Symmetry Points</label>
+                <div class="kpoints-container" id="kpoints-list">
+                    <!-- Dynamic kpoints will load here -->
+                </div>
+            </div>
+
+            <div class="form-group" id="selected-kpoint-box" style="display: none;">
+                <div class="kpoint-card">
+                    <div class="title" id="kpoint-card-title">Selected Point: Γ</div>
+                    <div class="value" id="kpoint-card-frac">Fractional: [0.00, 0.00, 0.00]</div>
+                    <div class="value" id="kpoint-card-cart">Cartesian: [0.000, 0.000, 0.000] Å⁻¹</div>
+                </div>
+            </div>
+
+            <div class="form-group" id="validation-section" style="margin-top: 10px; flex-grow: 1;">
+                <label>Validation Metrics</label>
+                <div class="vector-box" style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
+                    <div>Lattice Duality: <span id="val-duality" style="font-weight: bold; color: #22c55e;">PASS</span></div>
+                    <div>Real Vol (Prim): <span id="val-vol-real">0.00 Å³</span> (Ex: <span id="val-vol-real-ex">0.00 Å³</span>)</div>
+                    <div>Recip Vol (Prim): <span id="val-vol-recip">0.00 Å⁻³</span> (Ex: <span id="val-vol-recip-ex">0.00 Å⁻³</span>)</div>
+                    <div>Duality Ratio: <span id="val-ratio" style="font-weight: bold; color: #22c55e;">1.000000</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Physics & Rendering Script -->
+    <script>
+        // --- 1. SEED DATA (SeeK-Path Metadata) ---
+        const materialData = {
+            silicon: {
+                title: "Silicon (FCC Bravais)",
+                system: "Cubic (FCC)",
+                sg: "Fd-3m (No. 227) Primitive",
+                gap: "~0.61 eV",
+                defaultA: 5.43,
+                minA: 4.5,
+                maxA: 6.0
+            },
+            iron: {
+                title: "Iron (BCC)",
+                system: "Cubic (BCC)",
+                sg: "Im-3m (No. 229)",
+                gap: "0.0 eV (Metallic)",
+                defaultA: 2.87,
+                minA: 2.4,
+                maxA: 3.5
+            },
+            graphene: {
+                title: "Graphene (2D Hexagonal)",
+                system: "Hexagonal (2D)",
+                sg: "P6/mmm (No. 191)",
+                gap: "0.0 eV (Semimetal)",
+                defaultA: 2.46,
+                minA: 2.0,
+                maxA: 3.0
+            }
+        };
+
+        // State Management
+        let currentMaterial = "silicon";
+        let viewMode = "reciprocal"; 
+        let showAtoms = true;
+        let showBonds = true;
+        let selectedKPoint = null;
+
+        // BZ Caching
+        let cachedBZ = null;
+        let cachedBZParams = { material: "", a: 0 };
+
+        // --- 2. DFT DATA MANAGER ---
+        const DataManager = {
+            cache: {},
+            mapMaterialKey: (key) => {
+                const mapping = {
+                    silicon: "mp-149",
+                    iron: "mp-13",
+                    graphene: "mp-48"
+                };
+                return mapping[key] || key;
+            },
+            fetchBandData: async (materialKey) => {
+                if (DataManager.cache[materialKey]) {
+                    return DataManager.cache[materialKey];
+                }
+                const mpId = DataManager.mapMaterialKey(materialKey);
+                const url = `./data/${mpId}_bands.json?v=${new Date().getTime()}`;
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch band data for ${materialKey} (${mpId})`);
+                }
+                const data = await response.json();
+                DataManager.cache[materialKey] = data;
+                return data;
+            }
+        };
+
+        // --- 3. ENCAPSULATED PHYSICS ENGINE ---
+        const PhysicsEngine = {
+            dot: (v1, v2) => v1.x * v2.x + v1.y * v2.y + v1.z * v2.z,
+            
+            cross: (v1, v2) => ({
+                x: v1.y * v2.z - v1.z * v2.y,
+                y: v1.z * v2.x - v1.x * v2.z,
+                z: v1.x * v2.y - v1.y * v2.x
+            }),
+            
+            length: (v) => Math.sqrt(PhysicsEngine.dot(v, v)),
+            
+            scale: (v, s) => ({ x: v.x * s, y: v.y * s, z: v.z * s }),
+            
+            add: (v1, v2) => ({ x: v1.x + v2.x, y: v1.y + v2.y, z: v1.z + v2.z }),
+            
+            sub: (v1, v2) => ({ x: v1.x - v2.x, y: v1.y - v2.y, z: v1.z - v2.z }),
+            
+            normalize: (v) => {
+                const len = PhysicsEngine.length(v);
+                return len > 0 ? PhysicsEngine.scale(v, 1 / len) : { x: 0, y: 0, z: 0 };
+            },
+ 
+
+
+            planeDistance: (v, G) => {
+                const Ghat = PhysicsEngine.normalize(G);
+                return PhysicsEngine.dot(v, Ghat) - 0.5 * PhysicsEngine.length(G);
+            },
+
+            isInside: (v, G, eps = 1e-7) => {
+                return PhysicsEngine.planeDistance(v, G) <= eps;
+            },
+
+            findOrAdd: (v, verts, eps = 1e-5) => {
+                const eps2 = eps * eps;
+                for (let i = 0; i < verts.length; i++) {
+                    const u = verts[i];
+                    const dx = u.x - v.x;
+                    const dy = u.y - v.y;
+                    const dz = u.z - v.z;
+                    if (dx*dx + dy*dy + dz*dz < eps2) return i;
+                }
+                verts.push(v);
+                return verts.length - 1;
+            },
+
+            getPrimitiveVectors: (material, a) => {
+                if (material === "iron") {
+                    return {
+                        a1: { x: -a/2, y: a/2, z: a/2 },
+                        a2: { x: a/2, y: -a/2, z: a/2 },
+                        a3: { x: a/2, y: a/2, z: -a/2 }
+                    };
+                } else if (material === "graphene") {
+                    return {
+                        a1: { x: a, y: 0, z: 0 },
+                        a2: { x: -a/2, y: a * Math.sqrt(3)/2, z: 0 },
+                        a3: { x: 0, y: 0, z: 0 } 
+                    };
+                } else {
+                    return {
+                        a1: { x: 0, y: a/2, z: a/2 },
+                        a2: { x: a/2, y: 0, z: a/2 },
+                        a3: { x: a/2, y: a/2, z: 0 }
+                    };
+                }
+            },
+
+            getReciprocalVectors: (lattice, isGraphene = false) => {
+                if (isGraphene) {
+                    const a1x = lattice.a1.x, a1y = lattice.a1.y;
+                    const a2x = lattice.a2.x, a2y = lattice.a2.y;
+                    const area = a1x * a2y - a1y * a2x;
+                    const factor = 2 * Math.PI;
+
+                    return {
+                        b1: { x: factor * a2y / area, y: factor * -a2x / area, z: 0 },
+                        b2: { x: factor * -a1y / area, y: factor * a1x / area, z: 0 },
+                        b3: { x: 0, y: 0, z: 0 }
+                    };
+                }
+
+                const V = PhysicsEngine.dot(lattice.a1, PhysicsEngine.cross(lattice.a2, lattice.a3));
+                const factor = 2 * Math.PI;
+                return {
+                    b1: PhysicsEngine.scale(PhysicsEngine.cross(lattice.a2, lattice.a3), factor / V),
+                    b2: PhysicsEngine.scale(PhysicsEngine.cross(lattice.a3, lattice.a1), factor / V),
+                    b3: PhysicsEngine.scale(PhysicsEngine.cross(lattice.a1, lattice.a2), factor / V)
+                };
+            },
+
+            getBrillouinZonePolyhedron: (b1, b2, b3, is2D = false, cExtrusion = 1.5) => {
+                if (is2D) {
+                    return PhysicsEngine.getBrillouinZonePolyhedron2D(b1, b2, cExtrusion);
+                }
+
+                const gVectors = [];
+                const limit = 2;
+                const maxB = Math.max(PhysicsEngine.length(b1), PhysicsEngine.length(b2), PhysicsEngine.length(b3));
+                const cutoff = 2.5 * maxB;
+
+                for (let h = -limit; h <= limit; h++) {
+                    for (let k = -limit; k <= limit; k++) {
+                        for (let l = -limit; l <= limit; l++) {
+                            if (h === 0 && k === 0 && l === 0) continue;
+                            const G = PhysicsEngine.add(PhysicsEngine.add(PhysicsEngine.scale(b1, h), PhysicsEngine.scale(b2, k)), PhysicsEngine.scale(b3, l));
+                            if (PhysicsEngine.length(G) <= cutoff) {
+                                gVectors.push(G);
+                            }
+                        }
+                    }
+                }
+
+                gVectors.sort((A, B) => {
+                    const a = PhysicsEngine.length(A);
+                    const b = PhysicsEngine.length(B);
+                    if (Math.abs(a - b) > 1e-10) return a - b;
+                    return A.x - B.x || A.y - B.y || A.z - B.z;
+                });
+
+                const boxHalfSize = maxB * 4;
+                let polyhedron = {
+                    vertices: [
+                        { x: -boxHalfSize, y: -boxHalfSize, z: -boxHalfSize },
+                        { x: boxHalfSize, y: -boxHalfSize, z: -boxHalfSize },
+                        { x: boxHalfSize, y: boxHalfSize, z: -boxHalfSize },
+                        { x: -boxHalfSize, y: boxHalfSize, z: -boxHalfSize },
+                        { x: -boxHalfSize, y: -boxHalfSize, z: boxHalfSize },
+                        { x: boxHalfSize, y: -boxHalfSize, z: boxHalfSize },
+                        { x: boxHalfSize, y: boxHalfSize, z: boxHalfSize },
+                        { x: -boxHalfSize, y: boxHalfSize, z: boxHalfSize }
+                    ],
+                    faces: [
+                        { indices: [0, 3, 2, 1] },
+                        { indices: [4, 5, 6, 7] },
+                        { indices: [0, 1, 5, 4] },
+                        { indices: [2, 3, 7, 6] },
+                        { indices: [0, 4, 7, 3] },
+                        { indices: [1, 2, 6, 5] }
+                    ]
+                };
+
+                for (const G of gVectors) {
+                    polyhedron = PhysicsEngine.clipPolyhedron(polyhedron, G);
+                }
+
+                const cleanVertices = [];
+                const indexMap = {};
+                polyhedron.vertices.forEach((v, idx) => {
+                    indexMap[idx] = PhysicsEngine.findOrAdd(v, cleanVertices, 1e-5);
+                });
+
+                const cleanFaces = [];
+                polyhedron.faces.forEach((f) => {
+                    const mappedIndices = f.indices.map((idx) => indexMap[idx]);
+                    const cleanIndices = [];
+                    mappedIndices.forEach((idx) => {
+                        if (cleanIndices.length === 0 || cleanIndices[cleanIndices.length - 1] !== idx) {
+                            cleanIndices.push(idx);
+                        }
+                    });
+                    if (cleanIndices.length > 2 && cleanIndices[0] === cleanIndices[cleanIndices.length - 1]) {
+                        cleanIndices.pop();
+                    }
+                    if (cleanIndices.length >= 3) {
+                        cleanFaces.push({ indices: mappedIndices });
+                    }
+                });
+
+                const finalPoly = { vertices: cleanVertices, faces: cleanFaces };
+                PhysicsEngine.validatePolyhedron(finalPoly);
+                return finalPoly;
+            },
+
+            clipPolyhedron: (poly, G, eps = 1e-7) => {
+                const Ghat = PhysicsEngine.normalize(G);
+                const d = 0.5 * PhysicsEngine.length(G);
+
+                const newVertices = [...poly.vertices];
+                const newFaces = [];
+                const intersectionPoints = [];
+
+                const getOrAddIntersection = (v1, v2) => {
+                    const denom = PhysicsEngine.dot(PhysicsEngine.sub(v2, v1), Ghat);
+                    let t = 0.5;
+                    if (Math.abs(denom) > 1e-12) {
+                        t = (d - PhysicsEngine.dot(v1, Ghat)) / denom;
+                    }
+                    t = Math.max(0, Math.min(1, t));
+                    const intersect = PhysicsEngine.add(v1, PhysicsEngine.scale(PhysicsEngine.sub(v2, v1), t));
+
+                    return PhysicsEngine.findOrAdd(intersect, newVertices, eps);
+                };
+
+                for (const face of poly.faces) {
+                    const clippedIndices = [];
+                    const len = face.indices.length;
+
+                    for (let i = 0; i < len; i++) {
+                        const idx1 = face.indices[i];
+                        const idx2 = face.indices[(i + 1) % len];
+                        const v1 = poly.vertices[idx1];
+                        const v2 = poly.vertices[idx2];
+
+                        const in1 = PhysicsEngine.isInside(v1, G, eps);
+                        const in2 = PhysicsEngine.isInside(v2, G, eps);
+
+                        if (in1) clippedIndices.push(idx1);
+
+                        if (in1 !== in2) {
+                            const intersectIdx = getOrAddIntersection(v1, v2);
+                            if (clippedIndices.length === 0 || clippedIndices[clippedIndices.length - 1] !== intersectIdx) {
+                                clippedIndices.push(intersectIdx);
+                            }
+                            const intersectPt = newVertices[intersectIdx];
+                            if (!intersectionPoints.some((p) => Math.sqrt((p.x - intersectPt.x)**2 + (p.y - intersectPt.y)**2 + (p.z - intersectPt.z)**2) < eps)) {
+                                intersectionPoints.push(intersectPt);
+                            }
+                        }
+                    }
+
+                    const cleanIndices = [];
+                    clippedIndices.forEach((idx) => {
+                        if (cleanIndices.length === 0 || cleanIndices[cleanIndices.length - 1] !== idx) {
+                            cleanIndices.push(idx);
+                        }
+                    });
+                    if (cleanIndices.length > 2 && cleanIndices[0] === cleanIndices[cleanIndices.length - 1]) {
+                        cleanIndices.pop();
+                    }
+
+                    if (cleanIndices.length >= 3) {
+                        newFaces.push({ indices: cleanIndices });
+                    }
+                }
+
+                if (intersectionPoints.length >= 3) {
+                    const centroid = intersectionPoints.reduce((acc, val) => PhysicsEngine.add(acc, val), { x: 0, y: 0, z: 0 });
+                    const c = PhysicsEngine.scale(centroid, 1 / intersectionPoints.length);
+
+                    let u = PhysicsEngine.normalize({ x: -Ghat.y, y: Ghat.x, z: 0 });
+                    if (PhysicsEngine.length(u) < 1e-4) u = PhysicsEngine.normalize({ x: 0, y: -Ghat.z, z: Ghat.y });
+                    const v = PhysicsEngine.cross(Ghat, u);
+
+                    const sortedPoints = intersectionPoints.map(pt => {
+                        const rel = PhysicsEngine.sub(pt, c);
+                        return { pt, angle: Math.atan2(PhysicsEngine.dot(rel, v), PhysicsEngine.dot(rel, u)) };
+                    });
+                    sortedPoints.sort((a, b) => a.angle - b.angle);
+
+                    const planeFaceIndices = [];
+                    sortedPoints.forEach((sp) => {
+                        const idx = newVertices.findIndex((vert) => {
+                            const dx = vert.x - sp.pt.x;
+                            const dy = vert.y - sp.pt.y;
+                            const dz = vert.z - sp.pt.z;
+                            return dx * dx + dy * dy + dz * dz < eps * eps;
+                        });
+                        if (idx !== -1 && !planeFaceIndices.includes(idx)) {
+                            planeFaceIndices.push(idx);
+                        }
+                    });
+
+                    if (planeFaceIndices.length >= 3) {
+                        newFaces.push({ indices: planeFaceIndices });
+                    }
+                }
+
+                return { vertices: newVertices, faces: newFaces };
+            },
+
+            validatePolyhedron: (poly) => {
+                for (const v of poly.vertices) {
+                    if (isNaN(v.x) || isNaN(v.y) || isNaN(v.z) || !isFinite(v.x) || !isFinite(v.y) || !isFinite(v.z)) {
+                        return false;
+                    }
+                }
+                for (const face of poly.faces) {
+                    if (face.indices.length < 3) return false;
+                }
+                return true;
+            },
+
+            getBrillouinZonePolyhedron2D: (b1, b2, cExtrusion) => {
+                const gVectors = [];
+                const limit = 2;
+
+                for (let h = -limit; h <= limit; h++) {
+                    for (let k = -limit; k <= limit; k++) {
+                        if (h === 0 && k === 0) continue;
+                        gVectors.push(PhysicsEngine.add(PhysicsEngine.scale(b1, h), PhysicsEngine.scale(b2, k)));
+                    }
+                }
+
+                gVectors.sort((A, B) => {
+                    const a = PhysicsEngine.length(A);
+                    const b = PhysicsEngine.length(B);
+                    if (Math.abs(a - b) > 1e-10) return a - b;
+                    return A.x - B.x || A.y - B.y;
+                });
+
+                const boxHalfSize = Math.max(PhysicsEngine.length(b1), PhysicsEngine.length(b2)) * 4;
+                let polygon = [
+                    { x: -boxHalfSize, y: -boxHalfSize, z: 0 },
+                    { x: boxHalfSize, y: -boxHalfSize, z: 0 },
+                    { x: boxHalfSize, y: boxHalfSize, z: 0 },
+                    { x: -boxHalfSize, y: boxHalfSize, z: 0 }
+                ];
+
+                for (const G of gVectors) {
+                    const normal = PhysicsEngine.normalize({ x: G.x, y: G.y, z: 0 });
+                    const d = 0.5 * Math.sqrt(G.x * G.x + G.y * G.y);
+                    const isInside2D = (v) => (v.x * normal.x + v.y * normal.y) <= d + 1e-7;
+
+                    const nextPolygon = [];
+                    const len = polygon.length;
+
+                    for (let i = 0; i < len; i++) {
+                        const v1 = polygon[i];
+                        const v2 = polygon[(i + 1) % len];
+                        const in1 = isInside2D(v1);
+                        const in2 = isInside2D(v2);
+
+                        if (in1) nextPolygon.push(v1);
+
+                        if (in1 !== in2) {
+                            const dot1 = (v1.x * normal.x + v1.y * normal.y) - d;
+                            const dot2 = (v2.x * normal.x + v2.y * normal.y) - d;
+                            const t = dot1 / (dot1 - dot2);
+                            const intersect = {
+                                x: v1.x + (v2.x - v1.x) * t,
+                                y: v1.y + (v2.y - v1.y) * t,
+                                z: 0
+                            };
+                            nextPolygon.push(intersect);
+                        }
+                    }
+                    if (nextPolygon.length >= 3) {
+                        polygon = nextPolygon;
+                    }
+                }
+
+                const vertices = [];
+                const n = polygon.length;
+
+                for (let i = 0; i < n; i++) {
+                    vertices.push({ x: polygon[i].x, y: polygon[i].y, z: -cExtrusion / 2 });
+                }
+                for (let i = 0; i < n; i++) {
+                    vertices.push({ x: polygon[i].x, y: polygon[i].y, z: cExtrusion / 2 });
+                }
+
+                const faces = [];
+                faces.push({ indices: Array.from({ length: n }, (_, i) => n - 1 - i) });
+                faces.push({ indices: Array.from({ length: n }, (_, i) => n + i) });
+
+                for (let i = 0; i < n; i++) {
+                    const next = (i + 1) % n;
+                    faces.push({ indices: [i, next, next + n, i + n] });
+                }
+
+                return { vertices, faces };
+            }
+        };
+
+        // --- 3. VALIDATION IMPLEMENTATION ---
+        const Validation = {
+            run: () => {
+                const a = parseFloat(document.getElementById("slider-lattice-a").value);
+                const primitive = PhysicsEngine.getPrimitiveVectors(currentMaterial, a);
+                const isGraphene = currentMaterial === "graphene";
+                const recip = PhysicsEngine.getReciprocalVectors(primitive, isGraphene);
+
+                const a1 = primitive.a1, a2 = primitive.a2, a3 = primitive.a3;
+                const b1 = recip.b1, b2 = recip.b2, b3 = recip.b3;
+
+                const checkIdentity = (vecA, vecB, expected) => {
+                    const val = PhysicsEngine.dot(vecA, vecB);
+                    const deviation = Math.abs(val - expected);
+                    const normDev = expected > 0 ? deviation / expected : deviation;
+                    return normDev < 1e-7;
+                };
+
+                let dualityPass = true;
+                if (isGraphene) {
+                    dualityPass = checkIdentity(a1, b1, 2 * Math.PI) &&
+                                  checkIdentity(a1, b2, 0) &&
+                                  checkIdentity(a2, b1, 0) &&
+                                  checkIdentity(a2, b2, 2 * Math.PI);
+                } else {
+                    dualityPass = checkIdentity(a1, b1, 2 * Math.PI) && checkIdentity(a1, b2, 0) && checkIdentity(a1, b3, 0) &&
+                                  checkIdentity(a2, b1, 0) && checkIdentity(a2, b2, 2 * Math.PI) && checkIdentity(a2, b3, 0) &&
+                                  checkIdentity(a3, b1, 0) && checkIdentity(a3, b2, 0) && checkIdentity(a3, b3, 2 * Math.PI);
+                }
+
+                const valDualitySpan = document.getElementById("val-duality");
+                valDualitySpan.innerText = dualityPass ? "PASS" : "FAIL";
+                valDualitySpan.style.color = dualityPass ? "#22c55e" : "#ef4444";
+
+                let realVol = 0, recipVol = 0, analyticalReal = 0, analyticalRecip = 0, dualityRatio = 1.0;
+                if (isGraphene) {
+                    realVol = a1.x * a2.y - a1.y * a2.x;
+                    recipVol = b1.x * b2.y - b1.y * b2.x;
+                    analyticalReal = (a * a * Math.sqrt(3)) / 2;
+                    analyticalRecip = (16 * Math.PI * Math.PI) / (3 * a * a);
+                    dualityRatio = recipVol / ((4 * Math.PI * Math.PI) / realVol);
+                } else {
+                    realVol = PhysicsEngine.dot(a1, PhysicsEngine.cross(a2, a3));
+                    recipVol = PhysicsEngine.dot(b1, PhysicsEngine.cross(b2, b3));
+                    if (currentMaterial === "silicon") {
+                        analyticalReal = (a * a * a) / 4;
+                        analyticalRecip = 4 * Math.pow((2 * Math.PI) / a, 3);
+                    } else {
+                        analyticalReal = (a * a * a) / 2;
+                        analyticalRecip = 2 * Math.pow((2 * Math.PI) / a, 3);
+                    }
+                    dualityRatio = recipVol / (Math.pow(2 * Math.PI, 3) / realVol);
+                }
+
+                document.getElementById("val-vol-real").innerText = `${realVol.toFixed(4)} ${isGraphene ? "Å²" : "Å³"}`;
+                document.getElementById("val-vol-real-ex").innerText = `${analyticalReal.toFixed(4)} ${isGraphene ? "Å²" : "Å³"}`;
+                document.getElementById("val-vol-recip").innerText = `${recipVol.toFixed(4)} ${isGraphene ? "Å⁻²" : "Å⁻³"}`;
+                document.getElementById("val-vol-recip-ex").innerText = `${analyticalRecip.toFixed(4)} ${isGraphene ? "Å⁻²" : "Å⁻³"}`;
+
+                const ratioSpan = document.getElementById("val-ratio");
+                ratioSpan.innerText = dualityRatio.toFixed(6);
+                const dualityCorrect = Math.abs(dualityRatio - 1.0) < 1e-6;
+                ratioSpan.style.color = dualityCorrect ? "#22c55e" : "#ef4444";
+            }
+        };
+
+        // --- 4. THREE.JS RENDERER & INTERACTION CONTROLLER ---
+        const Renderer = {
+            scene: null,
+            camera: null,
+            renderer: null,
+            controls: null,
+            latticeGroup: null,
+            reciprocalGroup: null,
+            traceMarker: null,
+            chartInstance: null,
+            currentBandPayload: null,
+            lastHoveredIndex: null,
+
+            // Cached reusable materials
+            materials: {
+                siliconAtom: new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.2, roughness: 0.4 }),
+                ironAtom: new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.2, roughness: 0.4 }),
+                grapheneAtom: new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.2, roughness: 0.4 }),
+                wireframeLine: new THREE.LineBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.3 }),
+                bzFace: new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.2, metalness: 0.1, transparent: true, opacity: 0.35, side: THREE.DoubleSide }),
+                bzEdge: new THREE.LineBasicMaterial({ color: 0x60a5fa, linewidth: 2 }),
+                kpathLine: new THREE.LineBasicMaterial({ color: 0xf59e0b, linewidth: 2.5 })
+            },
+
+            init: () => {
+                const container = document.getElementById("canvas-container");
+                Renderer.scene = new THREE.Scene();
+                Renderer.scene.background = new THREE.Color(0x05070c);
+
+                Renderer.camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+                Renderer.camera.position.set(10, 10, 15);
+
+                Renderer.renderer = new THREE.WebGLRenderer({ antialias: true });
+                Renderer.renderer.setSize(container.clientWidth, container.clientHeight);
+                container.appendChild(Renderer.renderer.domElement);
+
+                Renderer.controls = new THREE.OrbitControls(Renderer.camera, Renderer.renderer.domElement);
+                Renderer.controls.enableDamping = true;
+                Renderer.controls.dampingFactor = 0.05;
+
+                // Lights
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+                Renderer.scene.add(ambientLight);
+                const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+                dirLight1.position.set(10, 20, 15);
+                Renderer.scene.add(dirLight1);
+                const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
+                dirLight2.position.set(-10, -20, -15);
+                Renderer.scene.add(dirLight2);
+
+                // Groups
+                Renderer.latticeGroup = new THREE.Group();
+                Renderer.reciprocalGroup = new THREE.Group();
+                Renderer.scene.add(Renderer.latticeGroup);
+                Renderer.scene.add(Renderer.reciprocalGroup);
+
+                // Phase 5: Glowing Trace Marker (Zero Allocation Policy)
+                const markerGeom = new THREE.SphereGeometry(0.18, 16, 16);
+                const markerMat = new THREE.MeshStandardMaterial({
+                    color: 0xef4444,
+                    emissive: 0xef4444,
+                    emissiveIntensity: 0.8
+                });
+                Renderer.traceMarker = new THREE.Mesh(markerGeom, markerMat);
+                Renderer.traceMarker.visible = false;
+                Renderer.reciprocalGroup.add(Renderer.traceMarker);
+
+                // Smooth Fly-to camera target variables
+                Renderer.targetLookAt = null;
+                Renderer.targetCamDistance = null;
+
+                // Resize observer
+                const resizeObserver = new ResizeObserver(() => {
+                    const width = container.clientWidth;
+                    const height = container.clientHeight;
+                    Renderer.renderer.setSize(width, height);
+                    Renderer.camera.aspect = width / height;
+                    Renderer.camera.updateProjectionMatrix();
+                });
+                resizeObserver.observe(container);
+
+                // Mouseleave event on band structure chart canvas
+                document.getElementById('band-structure-chart').addEventListener('mouseleave', () => {
+                    Renderer.traceMarker.visible = false;
+                    Renderer.lastHoveredIndex = null;
+                    Renderer.updateKPointDetails();
+                });
+
+
+                window.addEventListener("load", async () => {
+                    Renderer.recompute(true);
+                    Renderer.animate();
+
+                    // Load DFT Data asynchronously without blocking the 3D visualizer
+                    const titleEl = document.getElementById("meta-title");
+                    const selectEl = document.getElementById("material-select");
+                    const prevTitle = titleEl.innerText;
+                    titleEl.innerText = "Loading DFT Data...";
+                    selectEl.style.cursor = "wait";
+                    try {
+                        const payload = await DataManager.fetchBandData(currentMaterial);
+                        Renderer.updateBandStructurePlot(payload, true);
+                    } catch (err) {
+                        console.error(err);
+                    } finally {
+                        titleEl.innerText = prevTitle;
+                        selectEl.style.cursor = "default";
+                    }
+                });
+            },
+
+            // Recursive GPU memory release helper
+            disposeHierarchy: (node) => {
+                if (node.children) {
+                    for (let i = node.children.length - 1; i >= 0; i--) {
+                        Renderer.disposeHierarchy(node.children[i]);
+                    }
+                }
+                if (node.geometry) {
+                    node.geometry.dispose();
+                }
+                // Do NOT dispose shared materials owned by Renderer.materials cache.
+                if (node.material && !Object.values(Renderer.materials).includes(node.material) && node.material !== Renderer.traceMarker.material) {
+                    if (Array.isArray(node.material)) {
+                        node.material.forEach(m => m.dispose());
+                    } else {
+                        node.material.dispose();
+                    }
+                }
+            },
+
+            clearGroup: (group) => {
+                while (group.children.length > 0) {
+                    const obj = group.children[0];
+                    if (obj !== Renderer.traceMarker) {
+                        group.remove(obj);
+                        Renderer.disposeHierarchy(obj);
+                    } else {
+                        // Temporarily detach trace marker so it's not deleted
+                        group.remove(Renderer.traceMarker);
+                    }
+                }
+                // Re-add trace marker
+                if (group === Renderer.reciprocalGroup) {
+                    group.add(Renderer.traceMarker);
+                }
+            },
+
+            drawLattice: () => {
+                Renderer.clearGroup(Renderer.latticeGroup);
+                if (viewMode !== 'real') return;
+
+                const a = parseFloat(document.getElementById("slider-lattice-a").value);
+                const primitive = PhysicsEngine.getPrimitiveVectors(currentMaterial, a);
+
+                const a1Vec = new THREE.Vector3(primitive.a1.x, primitive.a1.y, primitive.a1.z);
+                const a2Vec = new THREE.Vector3(primitive.a2.x, primitive.a2.y, primitive.a2.z);
+                const a3Vec = new THREE.Vector3(primitive.a3.x, primitive.a3.y, primitive.a3.z);
+
+                const origin = new THREE.Vector3(0, 0, 0);
+
+                Renderer.latticeGroup.add(new THREE.ArrowHelper(a1Vec.clone().normalize(), origin, a1Vec.length(), 0xef4444, 0.2, 0.08));
+                Renderer.latticeGroup.add(new THREE.ArrowHelper(a2Vec.clone().normalize(), origin, a2Vec.length(), 0x22c55e, 0.2, 0.08));
+                if (currentMaterial !== "graphene") {
+                    Renderer.latticeGroup.add(new THREE.ArrowHelper(a3Vec.clone().normalize(), origin, a3Vec.length(), 0x3b82f6, 0.2, 0.08));
+                }
+
+                if (showAtoms) {
+                    const atomGeom = new THREE.SphereGeometry(0.18, 16, 16);
+                    const atomMat = currentMaterial === "silicon" 
+                        ? Renderer.materials.siliconAtom 
+                        : currentMaterial === "iron" 
+                            ? Renderer.materials.ironAtom 
+                            : Renderer.materials.grapheneAtom;
+
+                    const range = currentMaterial === "graphene" ? 3 : 1;
+                    const positions = [];
+
+                    for (let i = -range; i <= range; i++) {
+                        for (let j = -range; j <= range; j++) {
+                            const zMax = currentMaterial === "graphene" ? 0 : range;
+                            const zMin = currentMaterial === "graphene" ? 0 : -range;
+                            for (let k = zMin; k <= zMax; k++) {
+                                const pos = a1Vec.clone().multiplyScalar(i)
+                                    .addScaledVector(a2Vec, j)
+                                    .addScaledVector(a3Vec, k);
+                                positions.push(pos);
+
+                                const mesh = new THREE.Mesh(atomGeom, atomMat);
+                                mesh.position.copy(pos);
+                                Renderer.latticeGroup.add(mesh);
+                            }
+                        }
+                    }
+
+                    if (currentMaterial !== "graphene") {
+                        const corners = [
+                            origin, a1Vec, a1Vec.clone().add(a2Vec), a2Vec,
+                            a3Vec, a3Vec.clone().add(a1Vec), a3Vec.clone().add(a1Vec).add(a2Vec), a3Vec.clone().add(a2Vec)
+                        ];
+                        const edges = [
+                            [0, 1], [1, 2], [2, 3], [3, 0],
+                            [4, 5], [5, 6], [6, 7], [7, 4],
+                            [0, 4], [1, 5], [2, 6], [3, 7]
+                        ];
+                        const points = [];
+                        edges.forEach(([i1, i2]) => points.push(corners[i1], corners[i2]));
+
+                        const geom = new THREE.BufferGeometry().setFromPoints(points);
+                        Renderer.latticeGroup.add(new THREE.LineSegments(geom, Renderer.materials.wireframeLine));
+                    } else {
+                        const bondLen = a1Vec.length() / Math.sqrt(3);
+                        positions.forEach((pos) => {
+                            const nA = pos.clone().add(new THREE.Vector3(0, bondLen, 0));
+                            const nB = pos.clone().add(new THREE.Vector3(a1Vec.x / 2, -bondLen / 2, 0));
+                            const nC = pos.clone().add(new THREE.Vector3(-a1Vec.x / 2, -bondLen / 2, 0));
+
+                            [nA, nB, nC].forEach((n) => {
+                                const geom = new THREE.BufferGeometry().setFromPoints([pos, n]);
+                                Renderer.latticeGroup.add(new THREE.Line(geom, Renderer.materials.wireframeLine));
+                            });
+                        });
+                    }
+                }
+            },
+
+            drawReciprocalSpace: () => {
+                Renderer.clearGroup(Renderer.reciprocalGroup);
+                if (viewMode !== 'reciprocal') return;
+
+                const a = parseFloat(document.getElementById("slider-lattice-a").value);
+                const primitive = PhysicsEngine.getPrimitiveVectors(currentMaterial, a);
+
+                const isGraphene = currentMaterial === "graphene";
+                const recip = PhysicsEngine.getReciprocalVectors(primitive, isGraphene);
+
+                const b1Vec = new THREE.Vector3(recip.b1.x, recip.b1.y, recip.b1.z);
+                const b2Vec = new THREE.Vector3(recip.b2.x, recip.b2.y, recip.b2.z);
+                const b3Vec = new THREE.Vector3(recip.b3.x, recip.b3.y, recip.b3.z);
+
+                const origin = new THREE.Vector3(0, 0, 0);
+
+                Renderer.reciprocalGroup.add(new THREE.ArrowHelper(b1Vec.clone().normalize(), origin, b1Vec.length() * 0.8, 0xf59e0b, 0.15, 0.05));
+                Renderer.reciprocalGroup.add(new THREE.ArrowHelper(b2Vec.clone().normalize(), origin, b2Vec.length() * 0.8, 0x10b981, 0.15, 0.05));
+                if (!isGraphene) {
+                    Renderer.reciprocalGroup.add(new THREE.ArrowHelper(b3Vec.clone().normalize(), origin, b3Vec.length() * 0.8, 0x06b6d4, 0.15, 0.05));
+                }
+
+                document.getElementById("recip-b1").innerText = `b1: [${recip.b1.x.toFixed(3)}, ${recip.b1.y.toFixed(3)}, ${recip.b1.z.toFixed(3)}]`;
+                document.getElementById("recip-b2").innerText = `b2: [${recip.b2.x.toFixed(3)}, ${recip.b2.y.toFixed(3)}, ${recip.b2.z.toFixed(3)}]`;
+                if (isGraphene) {
+                    document.getElementById("recip-b3").innerText = `b3: [N/A 2D Planar]`;
+                } else {
+                    document.getElementById("recip-b3").innerText = `b3: [${recip.b3.x.toFixed(3)}, ${recip.b3.y.toFixed(3)}, ${recip.b3.z.toFixed(3)}]`;
+                }
+
+                if (showBonds) {
+                    let bzPolyhedron;
+                    if (cachedBZ && cachedBZParams.material === currentMaterial && Math.abs(cachedBZParams.a - a) < 1e-7) {
+                        bzPolyhedron = cachedBZ;
+                    } else {
+                        bzPolyhedron = PhysicsEngine.getBrillouinZonePolyhedron(recip.b1, recip.b2, recip.b3, isGraphene, 1.5);
+                        cachedBZ = bzPolyhedron;
+                        cachedBZParams = { material: currentMaterial, a };
+                    }
+
+                    const bzGeom = new THREE.BufferGeometry();
+                    const verticesArray = [];
+
+                    bzPolyhedron.faces.forEach((face) => {
+                        const len = face.indices.length;
+                        for (let i = 1; i < len - 1; i++) {
+                            const v0 = bzPolyhedron.vertices[face.indices[0]];
+                            const v1 = bzPolyhedron.vertices[face.indices[i]];
+                            const v2 = bzPolyhedron.vertices[face.indices[i + 1]];
+
+                            verticesArray.push(v0.x, v0.y, v0.z);
+                            verticesArray.push(v1.x, v1.y, v1.z);
+                            verticesArray.push(v2.x, v2.y, v2.z);
+                        }
+                    });
+
+                    bzGeom.setAttribute("position", new THREE.Float32BufferAttribute(verticesArray, 3));
+                    bzGeom.computeVertexNormals();
+
+                    const bzMesh = new THREE.Mesh(bzGeom, Renderer.materials.bzFace);
+                    Renderer.reciprocalGroup.add(bzMesh);
+
+                    // Edges
+                    bzPolyhedron.faces.forEach((face) => {
+                        const points = [];
+                        face.indices.forEach((idx) => {
+                            const v = bzPolyhedron.vertices[idx];
+                            points.push(new THREE.Vector3(v.x, v.y, v.z));
+                        });
+                        const first = bzPolyhedron.vertices[face.indices[0]];
+                        points.push(new THREE.Vector3(first.x, first.y, first.z));
+
+                        const edgeGeom = new THREE.BufferGeometry().setFromPoints(points);
+                        Renderer.reciprocalGroup.add(new THREE.Line(edgeGeom, Renderer.materials.bzEdge));
+                    });
+                }
+
+                if (showAtoms && Renderer.currentBandPayload) {
+                    const ptGeom = new THREE.SphereGeometry(0.12, 16, 16);
+                    const selPtGeom = new THREE.SphereGeometry(0.18, 16, 16);
+
+                    const uniquePointsMap = new Map();
+                    Renderer.currentBandPayload.high_sym_points.forEach((pt) => {
+                        if (!uniquePointsMap.has(pt.label)) {
+                            uniquePointsMap.set(pt.label, pt.frac);
+                        }
+                    });
+
+                    uniquePointsMap.forEach((frac, label) => {
+                        const isSelected = selectedKPoint === label;
+                        const ptMat = new THREE.MeshStandardMaterial({
+                            color: isSelected ? 0xef4444 : label === "Γ" ? 0xf59e0b : 0xe2e8f0,
+                            emissive: isSelected ? 0xef4444 : 0x000000,
+                            emissiveIntensity: 0.5
+                        });
+
+                        const px = frac[0]*recip.b1.x + frac[1]*recip.b2.x + frac[2]*recip.b3.x;
+                        const py = frac[0]*recip.b1.y + frac[1]*recip.b2.y + frac[2]*recip.b3.y;
+                        const pz = frac[0]*recip.b1.z + frac[1]*recip.b2.z + frac[2]*recip.b3.z;
+
+                        const mesh = new THREE.Mesh(isSelected ? selPtGeom : ptGeom, ptMat);
+                        mesh.position.set(px, py, pz);
+                        mesh.name = `kpoint-${label}`;
+                        Renderer.reciprocalGroup.add(mesh);
+                    });
+
+                    // Connecting paths - draw continuous line sequentially through exact sequence defined by high_sym_points array
+                    const pathPoints = Renderer.currentBandPayload.high_sym_points.map((pt) => {
+                        const frac = pt.frac;
+                        const px = frac[0]*recip.b1.x + frac[1]*recip.b2.x + frac[2]*recip.b3.x;
+                        const py = frac[0]*recip.b1.y + frac[1]*recip.b2.y + frac[2]*recip.b3.y;
+                        const pz = frac[0]*recip.b1.z + frac[1]*recip.b2.z + frac[2]*recip.b3.z;
+                        return new THREE.Vector3(px, py, pz);
+                    });
+
+                    if (pathPoints.length > 1) {
+                        const pathGeom = new THREE.BufferGeometry().setFromPoints(pathPoints);
+                        Renderer.reciprocalGroup.add(new THREE.Line(pathGeom, Renderer.materials.kpathLine));
+                    }
+                }
+            },
+
+            // Phase 5: Re-render Chart.js Plot with parsed DFT JSON data payload
+            updateBandStructurePlot: (payload, forceFullUpdate = false) => {
+                if (!payload) return;
+                Renderer.currentBandPayload = payload;
+
+                // Trigger dynamic drawing of BZ k-points and UI list now that payload is loaded
+                Renderer.drawReciprocalSpace();
+                Renderer.updateKPointsUIList();
+                Renderer.updateKPointDetails();
+
+                const maxD = payload.distances[payload.distances.length - 1];
+
+                const createDatasets = () => {
+                    return payload.bands.map((band, bandIdx) => {
+                        const color = `hsl(${(bandIdx * 360 / payload.bands.length) % 360}, 70%, 60%)`;
+                        
+                        const data = [];
+                        for(let i = 0; i < payload.distances.length; i++) {
+                            // If distance hasn't advanced, this is a path jump. Inject NaN to break the line.
+                            if (i > 0 && Math.abs(payload.distances[i] - payload.distances[i-1]) < 1e-5) {
+                                data.push({ x: payload.distances[i], y: NaN });
+                            }
+                            data.push({ x: payload.distances[i], y: band[i] });
+                        }
+
+                        return {
+                            label: `Band ${bandIdx + 1}`,
+                            data: data,
+                            borderColor: color,
+                            borderWidth: 1.5,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            fill: false,
+                            tension: 0,
+                            spanGaps: false // CRITICAL: Tells Chart.js to respect the NaN breaks
+                        };
+                    });
+                };
+
+                // The Chart.js Closure Leak Fix
+                if (Renderer.chartInstance) {
+                    if (forceFullUpdate) {
+                        Renderer.chartInstance.destroy();
+                        Renderer.chartInstance = null;
+                    } else {
+                        // Update existing chart data in-place for fast slider drag
+                        Renderer.chartInstance.data.datasets = createDatasets();
+                        Renderer.chartInstance.options.scales.x.max = maxD;
+                        Renderer.chartInstance.options.scales.x.ticks.callback = (val) => {
+                            const closest = payload.high_sym_points.find(p => Math.abs(p.x - val) < 0.05);
+                            return closest ? closest.label : '';
+                        };
+                        Renderer.chartInstance.update('none');
+                        return;
+                    }
+                }
+
+                const ctx = document.getElementById('band-structure-chart').getContext('2d');
+                Renderer.chartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        datasets: createDatasets()
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false } 
+                        },
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                min: 0,
+                                max: maxD,
+                                afterBuildTicks: (axis) => {
+                                    // Force Chart.js to place ticks EXACTLY at the high-symmetry nodes
+                                    axis.ticks = payload.high_sym_points.map(p => ({ value: p.x }));
+                                },
+                                ticks: {
+                                    autoSkip: false,
+                                    maxRotation: 0,
+                                    callback: function(val) {
+                                        const pt = payload.high_sym_points.find(p => Math.abs(p.x - val) < 1e-4);
+                                        return pt ? pt.label : '';
+                                    },
+                                    color: '#94a3b8',
+                                    font: { family: 'Inter', size: 10 }
+                                },
+                                grid: {
+                                    color: 'rgba(226, 135, 67, 0.4)',
+                                    lineWidth: 1.5
+                                }
+                            },
+                            y: {
+                                title: { display: true, text: 'Energy (eV)', color: '#94a3b8', font: { family: 'Inter', size: 10 } },
+                                ticks: { color: '#94a3b8', font: { family: 'Inter', size: 10 } },
+                                grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                            }
+                        },
+                        onHover: (event, activeElements) => {
+                            if (activeElements && activeElements.length > 0) {
+                                const index = activeElements[0].index;
+                                Renderer.highlightBandStructurePoint(index);
+                            }
+                        }
+                    }
+                });
+            },
+
+            // Phase 5: Bidirectional mapping highlight on hover (Instant feedback loop)
+            highlightBandStructurePoint: (index) => {
+                if (viewMode !== 'reciprocal' || !Renderer.currentBandPayload) return;
+                
+                // Guard clause for DOM Hemorrhage prevention
+                if (Renderer.lastHoveredIndex === index) return;
+                Renderer.lastHoveredIndex = index;
+
+                const payload = Renderer.currentBandPayload;
+                const x = payload.distances[index];
+                if (x === undefined) return;
+
+                // Find containing segment in high_sym_points
+                let p1 = null, p2 = null;
+                for (let j = 0; j < payload.high_sym_points.length - 1; j++) {
+                    const ptA = payload.high_sym_points[j];
+                    const ptB = payload.high_sym_points[j + 1];
+                    if (x >= ptA.x - 1e-5 && x <= ptB.x + 1e-5) {
+                        p1 = ptA;
+                        p2 = ptB;
+                        break;
+                    }
+                }
+
+                // The Interpolation Crash Guard
+                if (!p1 || !p2 || !p1.frac || !p2.frac) return;
+
+                const t = (p2.x - p1.x) > 1e-5 ? (x - p1.x) / (p2.x - p1.x) : 0;
+
+                const a = parseFloat(document.getElementById("slider-lattice-a").value);
+                const primitive = PhysicsEngine.getPrimitiveVectors(currentMaterial, a);
+                const isGraphene = currentMaterial === "graphene";
+                const recip = PhysicsEngine.getReciprocalVectors(primitive, isGraphene);
+
+                const getCartesianFromFrac = (frac) => {
+                    return new THREE.Vector3(
+                        frac[0]*recip.b1.x + frac[1]*recip.b2.x + frac[2]*recip.b3.x,
+                        frac[0]*recip.b1.y + frac[1]*recip.b2.y + frac[2]*recip.b3.y,
+                        frac[0]*recip.b1.z + frac[1]*recip.b2.z + frac[2]*recip.b3.z
+                    );
+                };
+
+                const cart1 = getCartesianFromFrac(p1.frac);
+                const cart2 = getCartesianFromFrac(p2.frac);
+                const cartInterp = new THREE.Vector3().lerpVectors(cart1, cart2, t);
+
+                Renderer.traceMarker.position.copy(cartInterp);
+                Renderer.traceMarker.visible = true;
+
+                // Update HUD
+                const container = document.getElementById("selected-kpoint-box");
+                container.style.display = "block";
+                const fracInterp = p1.frac.map((val, idx) => val + t * (p2.frac[idx] - val));
+                document.getElementById("kpoint-card-title").innerText = "Interactive Trace Point";
+                document.getElementById("kpoint-card-frac").innerText = `Fractional: [${fracInterp.map(val => val.toFixed(3)).join(", ")}]`;
+                
+                const hoverEnergies = payload.bands.map(band => band[index]);
+                const eString = hoverEnergies.slice(0, 4).map((val, idx) => `Band ${idx+1}: ${val.toFixed(2)} eV`).join(" | ");
+                document.getElementById("kpoint-card-cart").innerHTML = `Cartesian: [${cartInterp.x.toFixed(4)}, ${cartInterp.y.toFixed(4)}, ${cartInterp.z.toFixed(4)}] Å⁻¹<div style="margin-top: 5px; color: #e28743; font-weight: 600; font-size: 10px;">${eString} (Showing 4 of ${payload.bands.length} bands)</div>`;
+            },
+
+            recompute: (forceFullUpdate = false) => {
+                Renderer.drawLattice();
+                Renderer.drawReciprocalSpace();
+                Renderer.updateKPointDetails();
+                Validation.run();
+            },
+
+            updateKPointsUIList: () => {
+                const container = document.getElementById("kpoints-list");
+                container.innerHTML = "";
+                if (!Renderer.currentBandPayload) return;
+
+                const labels = new Set();
+                Renderer.currentBandPayload.high_sym_points.forEach((pt) => {
+                    labels.add(pt.label);
+                });
+
+                labels.forEach((label) => {
+                    const btn = document.createElement("button");
+                    btn.className = "kpoint-btn" + (selectedKPoint === label ? " active" : "");
+                    btn.innerText = label;
+                    btn.onclick = () => {
+                        selectedKPoint = selectedKPoint === label ? null : label;
+                        Renderer.updateKPointsUIList();
+                        Renderer.updateKPointDetails();
+                    };
+                    container.appendChild(btn);
+                });
+            },
+
+            updateKPointDetails: () => {
+                const container = document.getElementById("selected-kpoint-box");
+                
+                // Highlight 3D k-points directly in-place without complete redraw
+                if (Renderer.reciprocalGroup) {
+                    Renderer.reciprocalGroup.children.forEach((child) => {
+                        if (child.name && child.name.startsWith("kpoint-")) {
+                            const label = child.name.replace("kpoint-", "");
+                            const isSelected = selectedKPoint === label;
+                            child.material.color.setHex(isSelected ? 0xef4444 : label === "Γ" ? 0xf59e0b : 0xe2e8f0);
+                            child.material.emissive.setHex(isSelected ? 0xef4444 : 0x000000);
+                            child.scale.setScalar(isSelected ? 1.5 : 1.0);
+                        }
+                    });
+                }
+
+                if (!selectedKPoint || !Renderer.currentBandPayload) {
+                    container.style.display = "none";
+                    Renderer.targetLookAt = new THREE.Vector3(0, 0, 0);
+                    Renderer.targetCamDistance = 15.0; // Default zoom
+                    return;
+                }
+
+                container.style.display = "block";
+                const a = parseFloat(document.getElementById("slider-lattice-a").value);
+                const primitive = PhysicsEngine.getPrimitiveVectors(currentMaterial, a);
+                const isGraphene = currentMaterial === "graphene";
+                const recip = PhysicsEngine.getReciprocalVectors(primitive, isGraphene);
+                
+                const match = Renderer.currentBandPayload.high_sym_points.find(pt => pt.label === selectedKPoint);
+                if (!match) return;
+                const frac = match.frac;
+
+                const px = frac[0]*recip.b1.x + frac[1]*recip.b2.x + frac[2]*recip.b3.x;
+                const py = frac[0]*recip.b1.y + frac[1]*recip.b2.y + frac[2]*recip.b3.y;
+                const pz = frac[0]*recip.b1.z + frac[1]*recip.b2.z + frac[2]*recip.b3.z;
+
+                document.getElementById("kpoint-card-title").innerText = `Selected Point: ${selectedKPoint}`;
+                document.getElementById("kpoint-card-frac").innerText = `Fractional: [${frac.map(x => x.toFixed(3)).join(", ")}]`;
+                document.getElementById("kpoint-card-cart").innerText = `Cartesian: [${px.toFixed(4)}, ${py.toFixed(4)}, ${pz.toFixed(4)}] Å⁻¹`;
+                
+                // Smooth fly-to target look-at and camera distance
+                Renderer.targetLookAt = new THREE.Vector3(px, py, pz);
+                Renderer.targetCamDistance = 4.0; // Zoomed-in look
+            },
+
+            animate: () => {
+                requestAnimationFrame(Renderer.animate);
+                
+                // Interpolate OrbitControls target smoothly
+                if (Renderer.targetLookAt !== null) {
+                    Renderer.controls.target.lerp(Renderer.targetLookAt, 0.08);
+                    if (Renderer.controls.target.distanceTo(Renderer.targetLookAt) < 0.01) {
+                        Renderer.targetLookAt = null;
+                    }
+                }
+
+                // Interpolate camera zoom distance smoothly
+                if (Renderer.camera && Renderer.targetCamDistance !== null) {
+                    const currentDir = new THREE.Vector3().subVectors(Renderer.camera.position, Renderer.controls.target);
+                    const currentDist = currentDir.length();
+                    if (Math.abs(currentDist - Renderer.targetCamDistance) > 0.01) {
+                        const newDist = THREE.MathUtils.lerp(currentDist, Renderer.targetCamDistance, 0.08);
+                        currentDir.setLength(newDist);
+                        Renderer.camera.position.addVectors(Renderer.controls.target, currentDir);
+                    } else {
+                        Renderer.targetCamDistance = null;
+                    }
+                }
+
+                Renderer.controls.update();
+                Renderer.renderer.render(Renderer.scene, Renderer.camera);
+            }
+        };
+
+        // --- 5. INITIALIZERS & EVENT BINDINGS ---
+        const materialSelect = document.getElementById("material-select");
+        const sliderLatticeA = document.getElementById("slider-lattice-a");
+        const lblLatticeA = document.getElementById("lbl-lattice-a");
+
+        const btnViewReal = document.getElementById("btn-view-real");
+        const btnViewRecip = document.getElementById("btn-view-recip");
+
+        const chkShowAtoms = document.getElementById("chk-show-atoms");
+        const chkShowBonds = document.getElementById("chk-show-bonds");
+        const legendExplanation = document.getElementById("legend-explanation");
+
+        sliderLatticeA.addEventListener("input", (e) => {
+            const val = parseFloat(e.target.value);
+            lblLatticeA.innerText = `${val.toFixed(2)} Å`;
+            Renderer.recompute(false);
+            if (Renderer.currentBandPayload) {
+                Renderer.updateBandStructurePlot(Renderer.currentBandPayload, false);
+            }
+            
+            // Update the Transformation Guide dynamically
+            document.getElementById("trans-real-text").innerText = `Lattice constant: a = ${val.toFixed(2)} Å`;
+            document.getElementById("trans-recip-text").innerText = `Reciprocal scale: 2π/a = ${(2 * Math.PI / val).toFixed(3)} Å⁻¹`;
+        });
+
+        materialSelect.addEventListener("change", async (e) => {
+            currentMaterial = e.target.value;
+            const meta = materialData[currentMaterial];
+            
+            sliderLatticeA.min = meta.minA;
+            sliderLatticeA.max = meta.maxA;
+            sliderLatticeA.value = meta.defaultA;
+            lblLatticeA.innerText = `${meta.defaultA.toFixed(2)} Å`;
+
+            document.getElementById("meta-title").innerText = meta.title;
+            document.getElementById("meta-system").innerText = `Bravais: ${meta.system}`;
+            document.getElementById("meta-sg").innerText = `Space Group: ${meta.sg}`;
+            document.getElementById("meta-gap").innerText = `Band Gap: ${meta.gap}`;
+            
+            // Reset Transformation guide
+            document.getElementById("trans-real-text").innerText = `Lattice constant: a = ${meta.defaultA.toFixed(2)} Å`;
+            document.getElementById("trans-recip-text").innerText = `Reciprocal scale: 2π/a = ${(2 * Math.PI / meta.defaultA).toFixed(3)} Å⁻¹`;
+
+            selectedKPoint = null;
+            Renderer.traceMarker.visible = false;
+            Renderer.updateKPointsUIList();
+            
+            // 3D cell updates instantly
+            Renderer.recompute(true);
+
+            // Fetch and render the 2D DFT band structure asynchronously
+            const selectEl = document.getElementById("material-select");
+            const titleEl = document.getElementById("meta-title");
+            const prevTitle = titleEl.innerText;
+            titleEl.innerText = "Loading DFT Data...";
+            selectEl.style.cursor = "wait";
+            try {
+                const payload = await DataManager.fetchBandData(currentMaterial);
+                Renderer.updateBandStructurePlot(payload, true);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                titleEl.innerText = prevTitle;
+                selectEl.style.cursor = "default";
+            }
+        });
+
+        // Tab switcher function for solid state guide
+        window.switchTutorialTab = (tabName, btnElement) => {
+            // Remove active classes
+            const tabs = btnElement.parentElement.querySelectorAll(".tab-btn");
+            tabs.forEach(t => t.classList.remove("active"));
+            btnElement.classList.add("active");
+
+            const contentDiv = document.getElementById("tutorial-text");
+            if (tabName === "real-space") {
+                contentDiv.innerHTML = `
+                    <div class="tutorial-title">Real Space & Lattice</div>
+                    A crystal is a repeating pattern of atoms in physical space (Real Space). The unit cell is the smallest repeating block. The lattice constant <em>a</em> defines the unit cell dimension in Ångströms (1 Å = 10⁻¹⁰ meters).
+                `;
+            } else if (tabName === "recip-space") {
+                contentDiv.innerHTML = `
+                    <div class="tutorial-title">Reciprocal Space & BZ</div>
+                    Reciprocal Space represents wavevectors (momentum space) obtained via a Fourier Transform of real space coordinates. High symmetry points are labeled ($\Gamma$, $X$, $L$, $K$). The first Brillouin Zone is the Wigner-Seitz cell in Reciprocal Space.
+                `;
+            } else if (tabName === "bands") {
+                contentDiv.innerHTML = `
+                    <div class="tutorial-title">Electronic Band Structures</div>
+                    By solving Schrodinger's equation for electrons moving in the periodic crystal potential, we obtain Energy eigenvalues $E(k)$. The continuous lines in the plot represent the permitted energy states of electrons along the SeeK-path directions.
+                `;
+            }
+        };
+
+        btnViewReal.addEventListener("click", () => {
+            viewMode = "real";
+            btnViewReal.classList.add("active");
+            btnViewRecip.classList.remove("active");
+            legendExplanation.innerHTML = `<strong>Real Space:</strong> Visualizes the primitive unit cell vectors and atom coordinates. Sliders alter the physical lattice constant $a$.`;
+            document.getElementById("lbl-toggle-atoms").style.display = "flex";
+            Renderer.traceMarker.visible = false;
+            Renderer.recompute();
+        });
+
+        btnViewRecip.addEventListener("click", () => {
+            viewMode = "reciprocal";
+            btnViewRecip.classList.add("active");
+            btnViewReal.classList.remove("active");
+            legendExplanation.innerHTML = `<strong>Reciprocal BZ:</strong> Computes the Wigner-Seitz primitive cell (1st Brillouin Zone) around $\\Gamma(0,0,0)$ via convex polyhedron plane clipping. Overlay shows SeeK-path segments.`;
+            document.getElementById("lbl-toggle-atoms").style.display = "flex";
+            Renderer.recompute();
+        });
+
+        chkShowAtoms.addEventListener("change", (e) => {
+            showAtoms = e.target.checked;
+            Renderer.recompute();
+        });
+
+        chkShowBonds.addEventListener("change", (e) => {
+            showBonds = e.target.checked;
+            Renderer.recompute();
+        });
+
+        // Bootstrap Renderer
+        Renderer.init();
+    </script>
+</body>
+</html>
