@@ -325,7 +325,7 @@ strong {
 }
 
 .hero-subtitle {
-    font-size: 1.6rem; /* Scaled down to establish clear secondary hierarchy */
+    font-size: 1.35rem; /* Scaled down to establish clear secondary hierarchy */
     color: var(--text-secondary); /* Solid color contrasts with the gradient title */
     font-family: var(--font-display);
     font-weight: 500; /* Lighter weight prevents fighting with the 800-weight title */
