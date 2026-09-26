@@ -324,6 +324,17 @@ strong {
     font-weight: 800;
 }
 
+.hero-subtitle {
+    font-size: 1.6rem; /* Scaled down to establish clear secondary hierarchy */
+    color: var(--text-secondary); /* Solid color contrasts with the gradient title */
+    font-family: var(--font-display);
+    font-weight: 500; /* Lighter weight prevents fighting with the 800-weight title */
+    margin-top: 0;
+    margin-bottom: 25px; /* Pushes the location line down to maintain section balance */
+    letter-spacing: 0.5px;
+    text-wrap: balance; /* Prevents awkward typographic orphans if scaling changes */
+}
+
 .hero-location {
     font-size: 1.35rem;
     color: var(--accent-gold);
