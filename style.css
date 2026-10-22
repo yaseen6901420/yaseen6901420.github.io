@@ -332,16 +332,23 @@ strong {
 }
 
 .hero-subtitle {
-    font-size: 1.18rem;
-    line-height: 1.85;
+    font-size: 1rem;
+    line-height: 1.7;
     color: var(--text-secondary);
     font-family: var(--font-display);
     font-weight: 400;
-    letter-spacing: 0.15px;
+    letter-spacing: 0;
 
-    max-width: 800px;
+    max-width: 100%;
     margin: 0 auto 24px;
     text-wrap: balance;
+}
+
+/* French degree: single line on desktop */
+.hero-subtitle:nth-of-type(2) {
+    font-size: 0.78rem;
+    white-space: nowrap;
+    text-wrap: nowrap;
 }
 
 .hero-subtitle:last-of-type {
@@ -1149,12 +1156,24 @@ strong {
         margin-bottom: 32px;
     }
 
+   
     .hero-subtitle {
-        font-size: 1.05rem;
+        font-size: 0.95rem;
         line-height: 1.8;
         margin-bottom: 22px;
         max-width: 100%;
     }
+   
+   /* Allow French degree to wrap on mobile */
+    .hero-subtitle:nth-of-type(2) {
+        font-size: 0.85rem;
+        white-space: normal;
+        text-wrap: balance;
+    }
+
+
+    
+    
 
     .hero-location {
         font-size: 1.1rem;
