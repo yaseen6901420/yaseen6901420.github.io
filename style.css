@@ -332,7 +332,7 @@ strong {
 }
 
 .hero-subtitle {
-    font-size: 1rem;
+    font-size: 0.85rem;
     line-height: 1.7;
     color: var(--text-secondary);
     font-family: var(--font-display);
@@ -1158,7 +1158,7 @@ strong {
 
    
     .hero-subtitle {
-        font-size: 0.95rem;
+        font-size: 0.85rem;
         line-height: 1.8;
         margin-bottom: 22px;
         max-width: 100%;
@@ -1166,7 +1166,7 @@ strong {
    
    /* Allow French degree to wrap on mobile */
     .hero-subtitle:nth-of-type(2) {
-        font-size: 0.85rem;
+        font-size: 0.78rem;
         white-space: normal;
         text-wrap: balance;
     }
