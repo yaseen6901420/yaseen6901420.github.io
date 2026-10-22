@@ -302,6 +302,7 @@ strong {
 /* ==========================================
    Hero Section
    ========================================== */
+
 .hero-section {
     min-height: 35vh;
     display: flex;
@@ -309,14 +310,20 @@ strong {
     justify-content: center;
     align-items: center;
     text-align: center;
-    padding: 30px 0;
+    padding: 40px 0 30px;
     position: relative;
+}
+
+.hero-content {
+    width: 100%;
+    max-width: 950px;
+    margin: 0 auto;
 }
 
 .hero-title {
     font-size: 4.2rem;
-    line-height: 1.1;
-    margin-bottom: 20px;
+    line-height: 1.15;
+    margin-bottom: 42px;
     letter-spacing: -1px;
     background: var(--gradient-accent);
     -webkit-background-clip: text;
@@ -325,33 +332,41 @@ strong {
 }
 
 .hero-subtitle {
-    font-size: 1.35rem; /* Scaled down to establish clear secondary hierarchy */
-    color: var(--text-secondary); /* Solid color contrasts with the gradient title */
+    font-size: 1.18rem;
+    line-height: 1.85;
+    color: var(--text-secondary);
     font-family: var(--font-display);
-    font-weight: 500; /* Lighter weight prevents fighting with the 800-weight title */
-    margin-top: 0;
-    margin-bottom: 25px; /* Pushes the location line down to maintain section balance */
-    letter-spacing: 0.5px;
-    text-wrap: balance; /* Prevents awkward typographic orphans if scaling changes */
+    font-weight: 400;
+    letter-spacing: 0.15px;
+
+    max-width: 800px;
+    margin: 0 auto 24px;
+    text-wrap: balance;
+}
+
+.hero-subtitle:last-of-type {
+    margin-bottom: 0;
 }
 
 .hero-location {
-    font-size: 1.35rem;
+    font-size: 1.2rem;
     color: var(--accent-gold);
     font-family: var(--font-display);
     font-weight: 600;
-    margin-bottom: 30px;
+    margin-top: 42px;
+    margin-bottom: 26px;
 }
 
 .hero-meta-links {
     display: flex;
-    gap: 15px;
+    gap: 12px;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     font-family: var(--font-display);
     font-weight: 600;
+    line-height: 1.8;
 }
 
 .meta-link {
@@ -379,23 +394,24 @@ strong {
     display: flex;
     justify-content: center;
     width: 100%;
-    padding: 20px 20px 40px 20px; 
+    padding: 8px 20px 14px;
 }
 
 .degree-explanation-content {
-    max-width: 800px; 
-    padding: 15px 25px;
-    border-left: 3px solid var(--accent-gold); 
-    background-color: rgba(255, 255, 255, 0.03); 
+    width: 100%;
+    max-width: 800px;
+    padding: 15px 22px;
+    border-left: 3px solid var(--accent-gold);
+    background-color: rgba(255, 255, 255, 0.03);
     border-radius: 0 8px 8px 0;
 }
 
 .degree-explanation-content p {
-    font-family: var(--font-sans); 
+    font-family: var(--font-sans);
     font-size: 0.9rem;
     line-height: 1.5;
     color: var(--text-secondary);
-    font-style: italic; 
+    font-style: italic;
     margin: 0;
     text-align: left;
     opacity: 0.85;
@@ -1124,6 +1140,31 @@ strong {
     /* Footer */
     .footer p {
         font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.4rem;
+        margin-bottom: 32px;
+    }
+
+    .hero-subtitle {
+        font-size: 1.05rem;
+        line-height: 1.8;
+        margin-bottom: 22px;
+        max-width: 100%;
+    }
+
+    .hero-location {
+        font-size: 1.1rem;
+        margin-top: 34px;
+        margin-bottom: 24px;
+    }
+
+    .hero-meta-links {
+        font-size: 0.85rem;
+        gap: 10px;
     }
 }
 
