@@ -31,7 +31,7 @@
     --shadow-lg: 0 20px 45px rgba(12, 7, 5, 0.7);
     --shadow-glow: 0 0 15px rgba(245, 166, 35, 0.15);
     
-    --glass-blur: blur(12px);
+    --glass-blur: none;
     --transition-speed: 0.3s;
     --transition-curve: cubic-bezier(0.25, 0.8, 0.25, 1);
 }
@@ -56,8 +56,8 @@ html {
 }
 
 body {
-    background: radial-gradient(circle at 10% 15%, #3e261a 0%, #150d0a 55%, #0c0705 100%);
-    background-attachment: fixed;
+    background: #070d1b;
+    isolation: isolate;
     color: var(--text-primary);
     font-family: var(--font-sans);
     line-height: 1.6;
@@ -83,19 +83,18 @@ body {
     background: var(--accent-gold);
 }
 
-/* Background Gradients */
+/* Enchanted Great Hall sky. Fixed layers avoid mobile background-attachment issues. */
 .ocean-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at 80% 20%, rgba(212, 157, 59, 0.04) 0%, transparent 50%), radial-gradient(circle at 20% 80%, rgba(200, 90, 23, 0.03) 0%, transparent 50%);
+    position: fixed;
+    inset: 0;
+    background:
+        linear-gradient(rgba(3, 8, 20, 0.22), rgba(3, 8, 20, 0.48)),
+        url("assets/enchanted-cloud-sky.webp") center top / cover no-repeat;
     pointer-events: none;
     z-index: -2;
 }
 
-#bg-canvas {
+#bg-canvas, #starfield-canvas {
     position: fixed;
     top: 0;
     left: 0;
@@ -168,7 +167,7 @@ strong {
     transition: all var(--transition-speed) var(--transition-curve);
     position: relative;
     overflow: hidden;
-    animation: candlelight-pulse 8s infinite ease-in-out;
+    /* Static shadow avoids repainting every card throughout a scroll. */
 }
 
 .card::before {
@@ -1187,3 +1186,48 @@ strong {
     }
 }
 
+
+/* Quiet, dark reading surfaces preserve the warm academic typography. */
+:root {
+    --bg-card: rgba(12, 18, 31, 0.94);
+    --bg-card-hover: rgba(20, 27, 41, 0.97);
+    --text-muted: #bcafa1;
+}
+.content-wrapper {
+    background: linear-gradient(90deg, transparent, rgba(5, 11, 24, 0.78) 8%,
+        rgba(5, 11, 24, 0.78) 92%, transparent);
+}
+.navbar { background-color: rgba(7, 12, 24, 0.96); }
+@media (max-width: 768px) {
+    .content-wrapper { background: rgba(5, 11, 24, 0.80); }
+    .ocean-background { background-position: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+    #bg-canvas, #starfield-canvas { display: none; }
+    .card { animation: none; }
+}
+
+/* Starless cloud artwork + an entirely live canvas star field. */
+.ocean-background::after {
+    content: '';
+    position: absolute;
+    inset: -8%;
+    background:
+        radial-gradient(ellipse at 12% 24%, rgba(82, 137, 192, 0.14), transparent 42%),
+        radial-gradient(ellipse at 88% 65%, rgba(100, 77, 154, 0.12), transparent 40%);
+    animation: enchanted-mist 32s ease-in-out infinite alternate;
+}
+@keyframes enchanted-mist {
+    from { transform: translate3d(-2%, -1%, 0) scale(1); opacity: 0.5; }
+    to { transform: translate3d(2%, 2%, 0) scale(1.08); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ocean-background::after { animation: none; }
+}
+
+/* Keep animated background surfaces separate from scrolling document content. */
+.ocean-background, #bg-canvas, #starfield-canvas {
+    transform: translateZ(0);
+    contain: strict;
+}
+.ocean-background::after { will-change: transform, opacity; }
