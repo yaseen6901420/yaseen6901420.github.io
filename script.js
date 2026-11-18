@@ -259,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mobileOwlPanel.hidden = !mobileOwlOpen;
             mobileOwlToggle.setAttribute('aria-expanded', String(mobileOwlOpen));
             mobileOwlToggle.setAttribute('aria-label', mobileOwlOpen ? 'Let the owl rest' : 'Wake the owl and read its whisper');
-            if (mobileOwlHint) mobileOwlHint.textContent = mobileOwlOpen ? 'Tap outside to close' : 'Tap the owl';
+            if (mobileOwlHint) mobileOwlHint.textContent = mobileOwlOpen ? 'Tap outside to close' : 'Tap the owl for a fun fact about me.';
             mobileSceneDirty = true;
         }
         if (mobileOwlToggle) mobileOwlToggle.addEventListener('click', () => setMobileOwlOpen(!mobileOwlOpen));
