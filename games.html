@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     
     <title>Games - Harry Potter Trivia Quiz</title>
     <meta name="description" content="An interactive Harry Potter trivia game featuring Hedwig the Owl.">
@@ -320,6 +320,16 @@
             </select>
         </div>
     </header>
+
+    <div class="mobile-sky-stage">
+        <div id="mobile-owl-whisper" class="mobile-owl-panel" role="region" aria-label="The owl's whisper" hidden>
+            <p class="mobile-owl-message" aria-live="polite"></p>
+        </div>
+        <button class="mobile-owl-toggle" type="button" aria-label="Wake the owl and read its whisper"
+            aria-expanded="false" aria-controls="mobile-owl-whisper"></button>
+        <span class="mobile-owl-hint" aria-hidden="true">Tap the owl</span>
+    </div>
+
 
     <main class="content-wrapper">
         <section id="games" class="section scroll-anim active" style="margin-top: 100px;">
