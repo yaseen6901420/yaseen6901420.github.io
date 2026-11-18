@@ -990,7 +990,7 @@ strong {
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-width: 1024px) and (hover: none) and (pointer: coarse) {
     html {
         font-size: 12px; /* Smaller base font on mobile */
     }
@@ -1149,7 +1149,7 @@ strong {
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-width: 1024px) and (hover: none) and (pointer: coarse) {
     .hero-title {
         font-size: 2.4rem;
         margin-bottom: 32px;
@@ -1198,12 +1198,11 @@ strong {
         rgba(5, 11, 24, 0.78) 92%, transparent);
 }
 .navbar { background-color: rgba(7, 12, 24, 0.96); }
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-width: 1024px) and (hover: none) and (pointer: coarse) {
     .content-wrapper { background: rgba(5, 11, 24, 0.80); }
     .ocean-background { background-position: center; }
 }
 @media (prefers-reduced-motion: reduce) {
-    #bg-canvas, #starfield-canvas { display: none; }
     .card { animation: none; }
 }
 
@@ -1231,3 +1230,76 @@ strong {
     contain: strict;
 }
 .ocean-background::after { will-change: transform, opacity; }
+
+/* The same enchanted sky, with a clear home for the owl on touch screens. */
+.mobile-sky-stage { display: none; }
+.visually-hidden {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+@media (max-width: 768px), (max-width: 1024px) and (hover: none) and (pointer: coarse) {
+    html { font-size: 16px; scroll-padding-top: 88px; }
+    body { -webkit-text-size-adjust: 100%; }
+    .nav-container { padding: calc(10px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); gap: 12px; }
+    .nav-dropdown { min-height: 44px; max-width: 70%; font-size: 16px; padding: 8px 12px; }
+    .nav-logo { font-size: 1.4rem; flex-shrink: 0; min-height: 44px; min-width: 44px; display: flex; align-items: center; }
+    .mobile-sky-stage {
+        display: flow-root; position: relative;
+        margin-top: calc(84px + env(safe-area-inset-top, 0px)); min-height: 250px;
+    }
+    .mobile-owl-toggle {
+        position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+        width: 78px; height: 88px; border: 0; border-radius: 50%;
+        background: transparent; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    }
+    .mobile-owl-toggle:focus-visible { outline: 2px solid #ddc99d; outline-offset: 5px; }
+    .mobile-owl-hint {
+        position: absolute; left: 0; right: 0; bottom: 5px; text-align: center;
+        font-family: 'Cormorant Garamond', Georgia, serif; font-size: 16px;
+        color: #ddd0b9; pointer-events: none; text-shadow: 0 1px 4px #070d1b;
+    }
+    .mobile-owl-panel {
+        position: relative; max-width: 370px; margin: 18px auto 130px;
+        width: calc(100% - 32px); padding: 22px 23px;
+        border: 1px solid rgba(207,187,139,0.75); border-radius: 20px;
+        background: linear-gradient(135deg, #1a233e, #0c1324 55%, #1a182f);
+        box-shadow: 0 0 20px rgba(136,170,239,0.22), inset 0 0 0 5px #111b30;
+    }
+    .mobile-owl-panel[hidden] { display: none; }
+    .mobile-owl-panel::before {
+        content: ''; position: absolute; inset: 6px; border-radius: 15px;
+        border: 1px solid rgba(153,181,226,0.23); pointer-events: none;
+    }
+    .mobile-owl-message {
+        font: 500 20px/1.4 'Cormorant Garamond', Baskerville, Georgia, serif;
+        color: #f3eadc; white-space: pre-line; text-align: center; overflow-wrap: anywhere;
+    }
+    .content-wrapper { padding: 18px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px)); }
+    .hero-section { padding: 20px 0 24px; min-height: 0; }
+    .hero-title { font-size: clamp(1.9rem, 7.5vw, 2.5rem); margin-bottom: 28px; }
+    .hero-subtitle, .hero-subtitle:nth-of-type(2) { font-size: 1rem; white-space: normal; text-wrap: balance; }
+    .hero-meta-links { font-size: 0.9rem; gap: 4px 10px; }
+    .meta-link { display: inline-flex; align-items: center; min-height: 44px; overflow-wrap: anywhere; }
+    .section { scroll-margin-top: 88px; }
+    .section-title { font-size: 1.7rem; }
+    .summary-paragraph, .skill-bullets li, .timeline-content p,
+    .project-text, .project-details-bullets li, .pub-desc, .media-list li { font-size: 1rem; line-height: 1.75; }
+    .timeline-header h3, .project-card h3, .pub-card h3, .award-card h3,
+    .extra-card h3, .skill-detail-card h4 { font-size: 1.08rem; line-height: 1.5; }
+    .timeline-date, .hero-location { font-size: 0.95rem; }
+    .card { padding: 22px 18px; }
+    .filter-btn, .prev-btn, .next-btn, .slider-btn, .option-btn, .btn-restart {
+        min-width: 44px; min-height: 44px; touch-action: manipulation;
+    }
+    .degree-explanation-content { font-size: 0.85rem; line-height: 1.65; }
+    .games-card { padding: 24px 18px !important; }
+    #games.section { margin-top: 20px !important; }
+    .content-wrapper img { max-width: 100%; }
+}
+@media (hover: none) and (pointer: coarse) {
+    html, body, a, button, select, input, textarea, [role='button'], .filter-btn, .slider-btn { cursor: auto !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .card, .scroll-anim { animation: none; transition: none; }
+}
