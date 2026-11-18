@@ -1303,3 +1303,18 @@ strong {
     html { scroll-behavior: auto; }
     .card, .scroll-anim { animation: none; transition: none; }
 }
+/* Center the GREENANO introduction on phones only */
+@media (max-width: 768px),
+       (max-width: 1024px) and (hover: none) and (pointer: coarse) {
+
+    #education .timeline > div:has(> div > a[href="https://greenanomaster.eu"]) {
+        padding-left: 0 !important;
+        margin-left: -35px !important;
+        width: calc(100% + 35px) !important;
+    }
+
+    #education .timeline > div:has(> div > a[href="https://greenanomaster.eu"]) > div {
+        max-width: 100% !important;
+        text-align: center !important;
+    }
+}
