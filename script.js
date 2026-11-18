@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('bg-canvas');
     if (canvas) {
         const ctx = canvas.getContext('2d');
-        let dpr = window.devicePixelRatio || 1;
+        let dpr = Math.min(window.devicePixelRatio || 1, 1.5);
         let width = window.innerWidth;
         let height = window.innerHeight;
         let isMobile = width <= 768;
@@ -286,21 +286,147 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-        // Track stars for cosmic background
+        // Decode lunar artwork once and cache a small, transparent rendering surface.
+        let moonSprite = null;
+        const moonImage = new Image();
+        moonImage.decoding = 'async';
+        moonImage.onload = () => {
+            const sprite = document.createElement('canvas');
+            sprite.width = sprite.height = 320;
+            sprite.getContext('2d').drawImage(moonImage, 0, 0, 320, 320);
+            moonSprite = sprite;
+        };
+        moonImage.src = new URL('assets/dream-moon.webp', document.baseURI).href;
+
+        // Cache two feathered auras; animation only changes opacity and scale.
+        const moonAuras = ['120, 190, 255', '166, 139, 240'].map(rgb => {
+            const sprite = document.createElement('canvas');
+            sprite.width = sprite.height = 256;
+            const paint = sprite.getContext('2d');
+            const glow = paint.createRadialGradient(128, 128, 20, 128, 128, 128);
+            glow.addColorStop(0, `rgba(${rgb}, 0.34)`);
+            glow.addColorStop(0.32, `rgba(${rgb}, 0.26)`);
+            glow.addColorStop(0.58, `rgba(${rgb}, 0.12)`);
+            glow.addColorStop(1, `rgba(${rgb}, 0)`);
+            paint.fillStyle = glow;
+            paint.fillRect(0, 0, 256, 256);
+            return sprite;
+        });
+
+        // Rasterize glow and sparkle shapes once, rather than blur every star every frame.
+        const starSprites = new Map();
+        function getStarSprite(warm, glint) {
+            const key = `${warm}-${glint}`;
+            if (starSprites.has(key)) return starSprites.get(key);
+            const sprite = document.createElement('canvas');
+            sprite.width = sprite.height = 64;
+            const paint = sprite.getContext('2d');
+            const rgb = warm ? '255, 222, 163' : '214, 233, 255';
+            const glow = paint.createRadialGradient(32, 32, 0, 32, 32, 30);
+            glow.addColorStop(0, `rgba(${rgb}, 1)`);
+            glow.addColorStop(0.12, `rgba(${rgb}, 0.85)`);
+            glow.addColorStop(0.3, `rgba(${rgb}, 0.16)`);
+            glow.addColorStop(1, `rgba(${rgb}, 0)`);
+            paint.fillStyle = glow;
+            paint.fillRect(0, 0, 64, 64);
+            if (glint) {
+                paint.fillStyle = `rgba(${rgb}, 0.7)`;
+                paint.beginPath();
+                paint.moveTo(32, 4); paint.lineTo(34, 30);
+                paint.lineTo(60, 32); paint.lineTo(34, 34);
+                paint.lineTo(32, 60); paint.lineTo(30, 34);
+                paint.lineTo(4, 32); paint.lineTo(30, 30);
+                paint.closePath(); paint.fill();
+            }
+            starSprites.set(key, sprite);
+            return sprite;
+        }
+
+        // Independent, time-based twinkles over the enchanted sky artwork.
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
         let stars = [];
         function initStars() {
-            stars = [];
-            for (let i = 0; i < 45; i++) {
-                stars.push({
-                    x: Math.random() * width,
-                    y: Math.random() * height,
-                    size: Math.random() * 1.6 + 0.4,
-                    opacity: Math.random() * 0.5 + 0.1,
-                    speed: Math.random() * 0.015 + 0.005
-                });
-            }
+            const count = Math.min(950, Math.max(240, Math.round(width * height / 1900)));
+            stars = Array.from({ length: count }, () => ({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                size: 0.35 + Math.pow(Math.random(), 2.6) * 1.7,
+                phase: Math.random() * Math.PI * 2,
+                period: 1800 + Math.random() * 4800,
+                warm: Math.random() < 0.22
+            }));
+            stars.forEach(star => {
+                star.sprite = getStarSprite(star.warm, false);
+                star.glintSprite = star.size > 1.6 ? getStarSprite(star.warm, true) : null;
+            });
         }
         initStars();
+
+        // Keep the identical star renderer off the scrolling/input thread when supported.
+        let starWorker = null;
+        let starWorkerReady = false;
+        let starLayer = null;
+        let starWorkerTimer = 0;
+        const starWorkerData = () => ({width, height, density:dpr,
+            stars: stars.map(({x,y,size,phase,period,warm}) => ({x,y,size,phase,period,warm}))});
+        function stopStarWorker() {
+            starWorkerReady = false;
+            clearTimeout(starWorkerTimer);
+            if (starWorker) starWorker.terminate();
+            starWorker = null;
+            if (starLayer) starLayer.remove();
+            starLayer = null;
+        }
+        async function startStarWorker() {
+            if (!('Worker' in window) || !('OffscreenCanvas' in window) ||
+                !canvas.transferControlToOffscreen || !window.createImageBitmap) return;
+            try {
+                starWorker = new Worker(new URL('assets/starfield-worker.js', document.baseURI));
+                starWorker.onerror = stopStarWorker;
+                starWorker.onmessage = async ({data}) => {
+                    if (data.type === 'failed') { stopStarWorker(); return; }
+                    if (data.type === 'ready') {
+                        clearTimeout(starWorkerTimer);
+                        starWorkerReady = true;
+                        // Reveal only after the main canvas has cleared its old stars.
+                        requestAnimationFrame(() => requestAnimationFrame(() => {
+                            if (starLayer && starWorkerReady) starLayer.style.visibility = '';
+                        }));
+                        return;
+                    }
+                    if (data.type !== 'supported') return;
+                    if (!data.supported) { stopStarWorker(); return; }
+                    try {
+                        const keys = ['false-false','false-true','true-false','true-true'];
+                        const images = await Promise.all(keys.map(key => {
+                            const [warm,glint] = key.split('-');
+                            return createImageBitmap(getStarSprite(warm === 'true', glint === 'true'));
+                        }));
+                        if (!starWorker) { images.forEach(image => image.close()); return; }
+                        starLayer = document.createElement('canvas');
+                        starLayer.id = 'starfield-canvas';
+                        starLayer.setAttribute('aria-hidden','true');
+                        starLayer.style.visibility = 'hidden';
+                        canvas.before(starLayer);
+                        const offscreen = starLayer.transferControlToOffscreen();
+                        const sprites = Object.fromEntries(keys.map((key,i) => [key,images[i]]));
+                        starWorker.postMessage({type:'init', canvas:offscreen, sprites,
+                            ...starWorkerData(), reducedMotion:reducedMotion.matches,
+                            documentTimeOrigin:performance.timeOrigin}, [offscreen,...images]);
+                    } catch (_) { stopStarWorker(); }
+                };
+                // File previews and browsers that reject workers retain the original renderer.
+                starWorkerTimer = setTimeout(stopStarWorker, 8000);
+                starWorker.postMessage({type:'probe'});
+            } catch (_) { stopStarWorker(); }
+        }
+        reducedMotion.addEventListener('change', () => {
+            if (starWorkerReady) starWorker.postMessage({type:'motion', reducedMotion:reducedMotion.matches});
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (starWorkerReady) starWorker.postMessage({type:'visibility', visible:!document.hidden});
+        });
+        startStarWorker();
 
         // Track wind-blown silhouette leaves
         let leaves = [];
@@ -327,7 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initLeaves();
 
         function updateDimensions() {
-            dpr = window.devicePixelRatio || 1;
+            dpr = Math.min(window.devicePixelRatio || 1, 1.5);
             width = window.innerWidth;
             height = window.innerHeight;
             
@@ -353,9 +479,17 @@ document.addEventListener('DOMContentLoaded', () => {
             isMobile = width <= 768;
             initStars();
             initLeaves();
+            if (starWorkerReady) starWorker.postMessage({type:'resize', ...starWorkerData()});
         }
 
-        window.addEventListener('resize', updateDimensions);
+        let resizeFrame = 0;
+        window.addEventListener('resize', () => {
+            if (resizeFrame) return;
+            resizeFrame = requestAnimationFrame(() => {
+                resizeFrame = 0;
+                updateDimensions();
+            });
+        }, { passive: true });
 
         let codeLines = [
             { w: 30, maxW: 50 },
@@ -366,33 +500,333 @@ document.addEventListener('DOMContentLoaded', () => {
 
         isMobile = width <= 768;
 
+        // Decode detailed gothic artwork once into a small reusable sprite.
+        let broomSprite = null;
+        let broomAspect = 3;
+        const broomImage = new Image();
+        broomImage.decoding = 'async';
+        broomImage.onload = () => {
+            const sprite = document.createElement('canvas');
+            sprite.width = 768;
+            sprite.height = Math.round(768 * broomImage.naturalHeight / broomImage.naturalWidth);
+            sprite.getContext('2d').drawImage(broomImage, 0, 0, sprite.width, sprite.height);
+            broomAspect = sprite.width / sprite.height;
+            broomSprite = sprite;
+        };
+        broomImage.src = new URL('assets/ethereal-gothic-broom.webp', document.baseURI).href;
+
+        function broomFlight(elapsed) {
+            const phase = ((elapsed + 5000) % 36000) / 27000;
+            return {phase, x:-250+(width+500)*phase,
+                y:height*(0.36-Math.sin(Math.PI*Math.min(phase,1))*0.12)+
+                    Math.sin(elapsed*0.00065)*Math.min(height*0.026,18)};
+        }
+        function drawBroom(time) {
+            if (reducedMotion.matches || !broomSprite) return;
+            const flight = broomFlight(time);
+            if (flight.phase>1) return;
+            const scale = Math.min(0.95,Math.max(0.53,width/1500));
+            const opacity = Math.min(1,flight.phase*10,(1-flight.phase)*10);
+            const sparkleSprite = getStarSprite(false,true);
+            ctx.save();
+            for (let i=1;i<=28;i++) {
+                const pastTime = time-i*65;
+                if (pastTime<0) continue;
+                const past = broomFlight(pastTime);
+                if (past.phase>flight.phase || past.phase>1) continue;
+                const age=i/29;
+                const twinkle=(Math.sin(time*0.003+i*2.4)+1)/2;
+                const x=past.x-139*scale;
+                const y=past.y+Math.sin(i*2.4)*(3+age*15)*scale+age*8;
+                const size=(4+twinkle*7)*scale;
+                ctx.globalAlpha=opacity*(1-age)*(0.12+twinkle*0.65);
+                ctx.drawImage(sparkleSprite,x-size/2,y-size/2,size,size);
+            }
+            ctx.translate(flight.x,flight.y);
+            ctx.rotate(-0.08+Math.sin(time*0.00065)*0.065);
+            // A gentle moonlight shimmer helps the painterly sprite merge into the sky.
+            const moonlight = 0.88 + Math.sin(time * Math.PI * 2 / 6800) * 0.06;
+            ctx.globalAlpha=opacity*moonlight;
+            const spriteWidth = 350 * scale;
+            const spriteHeight = spriteWidth / broomAspect;
+            ctx.drawImage(broomSprite,-spriteWidth/2,-spriteHeight/2,spriteWidth,spriteHeight);
+            ctx.restore();
+        }
+
+        // A brief moon cameo, decoded once and drawn as one cached silhouette.
+        let nikaSprite = null;
+        let nikaAspect = 1;
+        const nikaImage = new Image();
+        nikaImage.decoding = 'async';
+        nikaImage.onload = () => {
+            const sprite = document.createElement('canvas');
+            sprite.height = 320;
+            sprite.width = Math.round(320 * nikaImage.naturalWidth / nikaImage.naturalHeight);
+            const paint = sprite.getContext('2d');
+            paint.drawImage(nikaImage, 0, 0, sprite.width, sprite.height);
+            // Guarantee a pure #000000 silhouette, preserving the transparent contour.
+            paint.globalCompositeOperation = 'source-in';
+            paint.fillStyle = '#000000';
+            paint.fillRect(0, 0, sprite.width, sprite.height);
+            paint.globalCompositeOperation = 'source-over';
+            nikaSprite = sprite;
+            nikaAspect = sprite.width / sprite.height;
+        };
+        nikaImage.src = new URL('assets/luffy-reference-silhouette.webp', document.baseURI).href;
+
+        function nikaMoonOpacity(time, moonX, moonScreenY, moonScreenR) {
+            const phase = time % 36000;
+            if (phase < 9000 || phase > 17200 || reducedMotion.matches) return 0;
+            // Keep a generous clear interval around a broom crossing, including its trail.
+            const broomScale = Math.min(0.95, Math.max(0.53, width / 1500));
+            for (const offset of [-1500, 0, 1500]) {
+                const broom = broomFlight(Math.max(0, time + offset));
+                if (broom.phase <= 1 &&
+                    Math.abs(broom.x - moonX) < 235 * broomScale + moonScreenR + 22 &&
+                    Math.abs(broom.y - moonScreenY) < 90 * broomScale + moonScreenR + 22) return 0;
+            }
+            const fade = Math.min(1, (phase - 9000) / 1400, (17200 - phase) / 1400);
+            return fade * fade * (3 - 2 * fade);
+        }
+        function drawNikaMoon(time, moonX, moonY, moonR, owlScale) {
+            if (!nikaSprite) return;
+            const alpha = nikaMoonOpacity(time, moonX, owl.y + (moonY - owl.y) * owlScale,
+                moonR * owlScale);
+            if (alpha <= 0) return;
+            const height = moonR * 1.80 / Math.max(1, nikaAspect);
+            const width = height * nikaAspect;
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.translate(moonX, moonY + Math.sin(time * 0.0017) * 2.5);
+            ctx.rotate(Math.sin(time * 0.0012) * 0.025);
+            ctx.drawImage(nikaSprite, -width / 2, -height / 2, width, height);
+            ctx.restore();
+        }
+
+        let branchCache = null;
+        let branchCacheDensity = 0;
+        function drawCachedBranch(anchorX, anchorY, owlScale) {
+            const density = dpr * owlScale;
+            if (!branchCache || branchCacheDensity !== density) {
+                branchCacheDensity = density;
+                branchCache = document.createElement('canvas');
+                branchCache.width = Math.ceil(1460 * density);
+                branchCache.height = Math.ceil(250 * density);
+                const paint = branchCache.getContext('2d');
+                paint.scale(density, density);
+                paint.translate(1205, 80);
+                paint.save();
+
+                paint.fillStyle = 'rgba(21, 13, 10, 0.95)'; // Deep charcoal silhouette
+                paint.beginPath();
+
+                // Main branch top contour
+                paint.moveTo(0 - 1200, 0 + 110);
+                paint.quadraticCurveTo(0 - 500, 0 + 75, 0 - 120, 0 + 48);
+                // Under claws
+                paint.quadraticCurveTo(0 - 40, 0 + 44, 0 + 40, 0 + 44);
+                // Tapering to the right
+                paint.quadraticCurveTo(0 + 120, 0 + 40, 0 + 200, 0 + 25);
+                
+                // Tip of the right branch
+                paint.quadraticCurveTo(0 + 220, 0 + 20, 0 + 240, 0 + 12);
+                paint.quadraticCurveTo(0 + 220, 0 + 25, 0 + 200, 0 + 32);
+
+                // Lower contour of the main branch
+                paint.quadraticCurveTo(0 + 120, 0 + 48, 0 + 40, 0 + 52);
+                paint.quadraticCurveTo(0 - 40, 0 + 54, 0 - 120, 0 + 60);
+                paint.quadraticCurveTo(0 - 500, 0 + 95, 0 - 1200, 0 + 160);
+                paint.closePath();
+                paint.fill();
+
+                // Draw organic sub-branches/twigs as filled paths or thick tapered lines
+                let drawTwig = (startX, startY, controlX, controlY, endX, endY, startWidth) => {
+                    paint.beginPath();
+                    paint.moveTo(startX, startY);
+                    paint.quadraticCurveTo(controlX, controlY, endX, endY);
+                    paint.strokeStyle = 'rgba(21, 13, 10, 0.95)';
+                    paint.lineCap = 'round';
+                    // We can draw a tapered line by drawing a few overlapping segments with decreasing width
+                    for (let i = 0; i < 10; i++) {
+                        let t1 = i / 10;
+                        let t2 = (i + 1) / 10;
+                        let x1 = (1 - t1) * (1 - t1) * startX + 2 * (1 - t1) * t1 * controlX + t1 * t1 * endX;
+                        let y1 = (1 - t1) * (1 - t1) * startY + 2 * (1 - t1) * t1 * controlY + t1 * t1 * endY;
+                        let x2 = (1 - t2) * (1 - t2) * startX + 2 * (1 - t2) * t2 * controlX + t2 * t2 * endX;
+                        let y2 = (1 - t2) * (1 - t2) * startY + 2 * (1 - t2) * t2 * controlY + t2 * t2 * endY;
+                        paint.lineWidth = startWidth * (1 - t1 * 0.85);
+                        paint.beginPath();
+                        paint.moveTo(x1, y1);
+                        paint.lineTo(x2, y2);
+                        paint.stroke();
+                    }
+                };
+
+                // Twig 1: Up-left from base area
+                drawTwig(0 - 260, 0 + 62, 0 - 290, 0 + 35, 0 - 320, 0 + 15, 6);
+                drawTwig(0 - 290, 0 + 35, 0 - 300, 0 + 20, 0 - 310, 0 + 5, 3);
+                drawTwig(0 - 280, 0 + 45, 0 - 265, 0 + 25, 0 - 250, 0 + 10, 3);
+
+                // Twig 2: Mid-left twig reaching up
+                drawTwig(0 - 160, 0 + 52, 0 - 170, 0 + 25, 0 - 180, 0 - 5, 5);
+                drawTwig(0 - 170, 0 + 25, 0 - 160, 0 + 5, 0 - 150, 0 - 12, 2.5);
+
+                // Twig 3: Strong central branch reaching high next to owl's left
+                drawTwig(0 - 70, 0 + 48, 0 - 65, 0 - 5, 0 - 85, 0 - 50, 7);
+                drawTwig(0 - 67, 0 + 15, 0 - 80, 0 - 10, 0 - 90, 0 - 35, 4);
+                drawTwig(0 - 75, 0 - 20, 0 - 70, 0 - 40, 0 - 73, 0 - 65, 3.5);
+
+                // Twig 4: Twig extending up-right from the right side of owl
+                drawTwig(0 + 80, 0 + 43, 0 + 110, 0 + 25, 0 + 130, 0 + 5, 4.5);
+                drawTwig(0 + 100, 0 + 31, 0 + 115, 0 + 15, 0 + 120, 0 - 5, 2.5);
+
+                // Twig 5: Lower hanging branch
+                drawTwig(0 - 110, 0 + 58, 0 - 60, 0 + 75, 0 + 20, 0 + 70, 7);
+                drawTwig(0 - 30, 0 + 70, 0 + 20, 0 + 85, 0 + 80, 0 + 82, 4);
+                drawTwig(0 + 20, 0 + 70, 0 + 40, 0 + 85, 0 + 60, 0 + 92, 3);
+            
+                paint.restore();
+            }
+            ctx.drawImage(branchCache, 0, 0, 1460 * branchCacheDensity,
+                250 * branchCacheDensity, anchorX - 1205, anchorY - 80, 1460, 250);
+        }
+
+        // Layout reads are only needed when the anchored card moves or changes size.
+        const anchoredGamesCard = document.querySelector('.games-card');
+        let gamesCardRect = null;
+        let gamesCardGeometryDirty = true;
+        const invalidateGamesCard = () => { gamesCardGeometryDirty = true; };
+        if (anchoredGamesCard) {
+            window.addEventListener('scroll', invalidateGamesCard, { passive: true });
+            window.addEventListener('resize', invalidateGamesCard, { passive: true });
+            if ('ResizeObserver' in window) {
+                new ResizeObserver(invalidateGamesCard).observe(anchoredGamesCard);
+            }
+        }
+
+        // Cache typography, ornamental borders and glow together at display resolution.
+        let elegantDialogue = null;
+        let elegantDialogueKey = '';
+        const whisperFont = "'Cormorant Garamond', 'Baskerville', 'Georgia', serif";
+        if (document.fonts) {
+            Promise.all([
+                document.fonts.load(`500 20px ${whisperFont}`)
+            ]).then(() => { elegantDialogueKey = ''; }).catch(() => {});
+            document.fonts.addEventListener('loadingdone', () => { elegantDialogueKey = ''; });
+        }
+        function buildElegantDialogue(boxWidth, compact, message) {
+            const pad = 28, inset = compact ? 20 : 25;
+            const fontSize = compact ? 18 : 20;
+            const lineHeight = compact ? 22 : 25;
+            const surface = document.createElement('canvas');
+            const paint = surface.getContext('2d');
+            paint.font = `500 ${fontSize}px ${whisperFont}`;
+            const lines = [];
+            for (const paragraph of message.split('\n')) {
+                let line = '';
+                for (const word of paragraph.split(/\s+/).filter(Boolean)) {
+                    const next = line ? `${line} ${word}` : word;
+                    if (line && paint.measureText(next).width > boxWidth - inset * 2) {
+                        lines.push(line); line = word;
+                    } else line = next;
+                }
+                lines.push(line);
+            }
+            const bodyTop = 24;
+            const boxHeight = bodyTop + lines.length * lineHeight + 24;
+            surface.width = Math.ceil((boxWidth + pad * 2) * dpr);
+            surface.height = Math.ceil((boxHeight + pad * 2) * dpr);
+            paint.scale(dpr,dpr);
+            paint.translate(pad,pad);
+            const shape = (x,y,w,h,r) => {
+                paint.beginPath();
+                paint.moveTo(x+r,y);paint.lineTo(x+w-r,y);
+                paint.quadraticCurveTo(x+w,y,x+w,y+r);paint.lineTo(x+w,y+h-r);
+                paint.quadraticCurveTo(x+w,y+h,x+w-r,y+h);paint.lineTo(x+r,y+h);
+                paint.quadraticCurveTo(x,y+h,x,y+h-r);paint.lineTo(x,y+r);
+                paint.quadraticCurveTo(x,y,x+r,y);paint.closePath();
+            };
+            paint.save();
+            paint.shadowColor='rgba(136,170,239,0.32)';paint.shadowBlur=17;
+            paint.shadowOffsetY=2;
+            const velvet=paint.createLinearGradient(0,0,boxWidth,boxHeight);
+            velvet.addColorStop(0,'rgba(26,35,62,0.98)');
+            velvet.addColorStop(0.5,'rgba(12,19,36,0.98)');
+            velvet.addColorStop(1,'rgba(26,24,47,0.98)');
+            paint.fillStyle=velvet;shape(0,0,boxWidth,boxHeight,20);paint.fill();
+            paint.restore();
+            paint.strokeStyle='rgba(207,187,139,0.75)';paint.lineWidth=0.9;
+            shape(0.5,0.5,boxWidth-1,boxHeight-1,20);paint.stroke();
+            paint.strokeStyle='rgba(153,181,226,0.23)';paint.lineWidth=0.65;
+            shape(6,6,boxWidth-12,boxHeight-12,15);paint.stroke();
+            // Fine gilded corner flourishes and small four-point stars.
+            for (const [x,y,sx,sy] of [[13,13,1,1],[boxWidth-13,13,-1,1],
+                [13,boxHeight-13,1,-1],[boxWidth-13,boxHeight-13,-1,-1]]) {
+                paint.save();paint.translate(x,y);paint.scale(sx,sy);
+                paint.strokeStyle='rgba(224,205,164,0.75)';paint.lineWidth=0.75;
+                paint.beginPath();paint.moveTo(0,15);paint.quadraticCurveTo(0,0,15,0);paint.stroke();
+                paint.fillStyle='#d9c797';paint.beginPath();
+                paint.moveTo(1,-2);paint.lineTo(2,1);paint.lineTo(5,2);
+                paint.lineTo(2,3);paint.lineTo(1,6);paint.lineTo(0,3);
+                paint.lineTo(-3,2);paint.lineTo(0,1);paint.closePath();paint.fill();
+                paint.restore();
+            }
+            paint.textAlign='center';paint.textBaseline='middle';
+            paint.fillStyle='#f3eadc';paint.font=`500 ${fontSize}px ${whisperFont}`;
+            lines.forEach((line,i)=>paint.fillText(line,boxWidth/2,bodyTop+i*lineHeight+lineHeight/2));
+            return {surface,boxWidth,boxHeight,pad};
+        }
+        function drawElegantOwlDialogue(time, opacity) {
+            const compact = width <= 768;
+            const boxWidth = Math.min(compact ? 260 : 296, width - 28);
+            const message = window.owlDialogueText ||
+                'Did you know?\nI love experimenting around with different sorts of tea in my spare time: white tea, green tea, black tea, yellow tea, fruit teas, matcha—you name it!\nWhoot fun!';
+            const key = `${boxWidth}|${compact}|${dpr}|${message}`;
+            if (!elegantDialogue || key !== elegantDialogueKey) {
+                elegantDialogue=buildElegantDialogue(boxWidth,compact,message);
+                elegantDialogueKey=key;
+            }
+            const {surface,boxHeight,pad}=elegantDialogue;
+            const x=Math.max(14,Math.min(owl.x-boxWidth/2,width-boxWidth-14));
+            const owlHeadY=owl.y-36*(compact ? 0.45 : 1);
+            const y=Math.max(14,owlHeadY-boxHeight-22);
+            ctx.save();ctx.globalAlpha=opacity;
+            ctx.drawImage(surface,x-pad,y-pad,boxWidth+pad*2,boxHeight+pad*2);
+            // A few soft fairy lights echo the moon; expensive glow is already cached.
+            for(let i=0;i<3;i++){
+                const wave=reducedMotion.matches ? 0.5 : (Math.sin(time*0.0014+i*2.4)+1)/2;
+                const size=7+wave*5;
+                const sx=i===0 ? x+boxWidth*0.5 : x+boxWidth+(i===1 ? 3 : -5);
+                const sy=i===0 ? y-3 : y+boxHeight*(i===1 ? 0.23 : 0.8);
+                ctx.globalAlpha=opacity*(0.16+wave*0.5);
+                ctx.drawImage(getStarSprite(false,true),sx-size/2,sy-size/2,size,size);
+            }
+            ctx.restore();
+        }
+
         function animate(time) {
 
             ctx.clearRect(0, 0, width, height);
 
-            // Draw twinkling stars for the cosmic universe feel
+            if (!starWorkerReady) {
+            // Fade each star independently; timing is consistent on every refresh rate.
+            ctx.save();
             stars.forEach(star => {
-                star.opacity += star.speed;
-                if (star.opacity > 0.85 || star.opacity < 0.1) {
-                    star.speed = -star.speed;
-                }
-                // Tiny glow shadow for brighter stars
-                if (star.opacity > 0.55) {
-                    ctx.save();
-                    ctx.shadowColor = `rgba(245, 166, 35, ${star.opacity * 0.5})`;
-                    ctx.shadowBlur = star.size * 3;
-                    ctx.fillStyle = `rgba(255, 220, 120, ${star.opacity * 0.85})`;
-                    ctx.beginPath();
-                    ctx.arc(star.x, star.y, star.size * 1.1, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.restore();
-                } else {
-                    ctx.fillStyle = `rgba(245, 166, 35, ${star.opacity * 0.7})`;
-                    ctx.beginPath();
-                    ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
-                    ctx.fill();
-                }
+                const wave = reducedMotion.matches ? 0.5 :
+                    (Math.sin(time * Math.PI * 2 / star.period + star.phase) + 1) / 2;
+                const opacity = 0.025 + Math.pow(wave, 1.7) * 0.975;
+                const diameter = star.size * 10;
+                const sprite = star.glintSprite && wave > 0.65 ? star.glintSprite : star.sprite;
+                ctx.globalAlpha = opacity;
+                ctx.drawImage(sprite, star.x - diameter / 2, star.y - diameter / 2,
+                    diameter, diameter);
             });
+
+            ctx.restore();
+
+
+
+            }
 
             // Update & Draw wind-blown silhouette leaves (realistic physics-based drift)
             leaves.forEach(leaf => {
@@ -473,9 +907,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // Anchor owl directly above the games quiz question card on games page
             let isGamePage = !!window.forceOwlDialogue;
             if (isGamePage && !isMobile) {
-                let gamesCard = document.querySelector('.games-card');
-                if (gamesCard) {
-                    let rect = gamesCard.getBoundingClientRect();
+                if (anchoredGamesCard) {
+                    if (gamesCardGeometryDirty || !gamesCardRect) {
+                        gamesCardRect = anchoredGamesCard.getBoundingClientRect();
+                        gamesCardGeometryDirty = false;
+                    }
+                    const rect = gamesCardRect;
                     // Center owl horizontally above the box
                     scaledBaseX = rect.left + rect.width / 2;
                     // Position perched directly on the top border (leaving room for claws)
@@ -568,125 +1005,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-            // 0. Full moon — extra warm parchment off-white, positioned behind the owl's head
+            // 0. Enchanted pearl moon, floating higher above the owl.
             (function drawMoon() {
-                let moonX = owl.x;           // centred on the owl
-                let moonY = owl.y - 120;      // owl head centre (head radius ~26px)
-                let moonR = 50;
-
-                // Solid rich, extra warm golden-parchment base (no gradient)
-                ctx.fillStyle = 'rgba(246, 224, 186, 1.0)'; // Deepest warm parchment tone
-                ctx.beginPath();
-                ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Thin warm-border rim
-                ctx.strokeStyle = 'rgba(195, 170, 125, 0.75)'; // Rich antique brown rim
-                ctx.lineWidth = 1.2;
-                ctx.stroke();
-
-                // Visible craters: matching deep warm antique paper shadow tones
-                let craters = [
-                    { dx: -16, dy: -20, r: 7.0 },
-                    { dx:  14, dy: -18, r: 5.5 },
-                    { dx: -28, dy:   4, r: 5.0 },
-                    { dx:   6, dy:  14, r: 8.5 },
-                    { dx: -10, dy:  26, r: 4.5 },
-                    { dx:  22, dy:   8, r: 4.0 },
-                    { dx:  -4, dy:  -6, r: 3.5 },
-                ];
-                craters.forEach(c => {
-                    // Deep warm sepia crater floor
-                    ctx.beginPath();
-                    ctx.arc(moonX + c.dx, moonY + c.dy, c.r, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(180, 150, 110, 0.45)'; // Deeper paper shadow
-                    ctx.fill();
-
-                    // Inner lighter highlight
-                    ctx.beginPath();
-                    ctx.arc(moonX + c.dx - c.r * 0.25, moonY + c.dy - c.r * 0.25, c.r * 0.5, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(255, 244, 215, 0.60)'; // Rich warm cream highlight
-                    ctx.fill();
-
-                    // Crisp outline ring
-                    ctx.beginPath();
-                    ctx.arc(moonX + c.dx, moonY + c.dy, c.r, 0, Math.PI * 2);
-                    ctx.strokeStyle = 'rgba(165, 135, 95, 0.50)'; // Toasted brown edge
-                    ctx.lineWidth = 0.9;
-                    ctx.stroke();
-                });
+                const moonX = owl.x;
+                const moonY = owl.y - 220;
+                const moonR = 68;
+                const pulse = reducedMotion.matches ? 0.5 :
+                    (Math.sin(time * Math.PI * 2 / 6200) + 1) / 2;
+                const shimmer = reducedMotion.matches ? 0.5 :
+                    (Math.sin(time * Math.PI * 2 / 9700 + 1.4) + 1) / 2;
+                ctx.save();
+                const auraSize = moonR * (3.7 + pulse * 0.22);
+                ctx.globalAlpha = 0.52 + pulse * 0.30;
+                ctx.drawImage(moonAuras[0], moonX - auraSize / 2, moonY - auraSize / 2,
+                    auraSize, auraSize);
+                ctx.globalAlpha = 0.28 + shimmer * 0.30;
+                const outerSize = auraSize * 1.18;
+                ctx.drawImage(moonAuras[1], moonX - outerSize / 2, moonY - outerSize / 2,
+                    outerSize, outerSize);
+                ctx.globalAlpha = 1;
+                if (moonSprite) {
+                    const extent = moonR * 2 / 0.65;
+                    ctx.drawImage(moonSprite, moonX - extent / 2, moonY - extent / 2,
+                        extent, extent);
+                } else {
+                    const pearl = ctx.createRadialGradient(moonX - 18, moonY - 22, 2,
+                        moonX, moonY, moonR);
+                    pearl.addColorStop(0, '#f0f3ff');
+                    pearl.addColorStop(0.65, '#c8daef');
+                    pearl.addColorStop(1, '#8ea9d6');
+                    ctx.fillStyle = pearl;
+                    ctx.beginPath(); ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2); ctx.fill();
+                }
+                // A sparse halo of independently twinkling fairy lights.
+                for (let i = 0; i < 7; i++) {
+                    const phase = i * 2.39996;
+                    const wave = reducedMotion.matches ? 0.5 :
+                        (Math.sin(time * 0.0011 + phase * 2) + 1) / 2;
+                    const radius = moonR * (1.18 + (i % 3) * 0.15);
+                    const drift = reducedMotion.matches ? 0 : Math.sin(time * 0.0004 + phase) * 0.035;
+                    const x = moonX + Math.cos(phase + drift) * radius;
+                    const y = moonY + Math.sin(phase + drift) * radius;
+                    const size = 7 + wave * 7;
+                    ctx.globalAlpha = 0.12 + wave * 0.70;
+                    ctx.drawImage(getStarSprite(false, true), x - size / 2, y - size / 2, size, size);
+                }
+                ctx.restore();
+                drawNikaMoon(time, moonX, moonY, moonR, owlScale);
             })();
 
             // 1. Organic Silhouette Tree Branch (Beautiful tapered silhouette next to/under the owl)
-            (function drawSilhouetteBranch() {
-                ctx.fillStyle = 'rgba(21, 13, 10, 0.95)'; // Deep charcoal silhouette
-                ctx.beginPath();
-
-                // Main branch top contour
-                ctx.moveTo(owl.x - 1200, owl.y + 110);
-                ctx.quadraticCurveTo(owl.x - 500, owl.y + 75, owl.x - 120, owl.y + 48);
-                // Under claws
-                ctx.quadraticCurveTo(owl.x - 40, owl.y + 44, owl.x + 40, owl.y + 44);
-                // Tapering to the right
-                ctx.quadraticCurveTo(owl.x + 120, owl.y + 40, owl.x + 200, owl.y + 25);
-                
-                // Tip of the right branch
-                ctx.quadraticCurveTo(owl.x + 220, owl.y + 20, owl.x + 240, owl.y + 12);
-                ctx.quadraticCurveTo(owl.x + 220, owl.y + 25, owl.x + 200, owl.y + 32);
-
-                // Lower contour of the main branch
-                ctx.quadraticCurveTo(owl.x + 120, owl.y + 48, owl.x + 40, owl.y + 52);
-                ctx.quadraticCurveTo(owl.x - 40, owl.y + 54, owl.x - 120, owl.y + 60);
-                ctx.quadraticCurveTo(owl.x - 500, owl.y + 95, owl.x - 1200, owl.y + 160);
-                ctx.closePath();
-                ctx.fill();
-
-                // Draw organic sub-branches/twigs as filled paths or thick tapered lines
-                let drawTwig = (startX, startY, controlX, controlY, endX, endY, startWidth) => {
-                    ctx.beginPath();
-                    ctx.moveTo(startX, startY);
-                    ctx.quadraticCurveTo(controlX, controlY, endX, endY);
-                    ctx.strokeStyle = 'rgba(21, 13, 10, 0.95)';
-                    ctx.lineCap = 'round';
-                    // We can draw a tapered line by drawing a few overlapping segments with decreasing width
-                    for (let i = 0; i < 10; i++) {
-                        let t1 = i / 10;
-                        let t2 = (i + 1) / 10;
-                        let x1 = (1 - t1) * (1 - t1) * startX + 2 * (1 - t1) * t1 * controlX + t1 * t1 * endX;
-                        let y1 = (1 - t1) * (1 - t1) * startY + 2 * (1 - t1) * t1 * controlY + t1 * t1 * endY;
-                        let x2 = (1 - t2) * (1 - t2) * startX + 2 * (1 - t2) * t2 * controlX + t2 * t2 * endX;
-                        let y2 = (1 - t2) * (1 - t2) * startY + 2 * (1 - t2) * t2 * controlY + t2 * t2 * endY;
-                        ctx.lineWidth = startWidth * (1 - t1 * 0.85);
-                        ctx.beginPath();
-                        ctx.moveTo(x1, y1);
-                        ctx.lineTo(x2, y2);
-                        ctx.stroke();
-                    }
-                };
-
-                // Twig 1: Up-left from base area
-                drawTwig(owl.x - 260, owl.y + 62, owl.x - 290, owl.y + 35, owl.x - 320, owl.y + 15, 6);
-                drawTwig(owl.x - 290, owl.y + 35, owl.x - 300, owl.y + 20, owl.x - 310, owl.y + 5, 3);
-                drawTwig(owl.x - 280, owl.y + 45, owl.x - 265, owl.y + 25, owl.x - 250, owl.y + 10, 3);
-
-                // Twig 2: Mid-left twig reaching up
-                drawTwig(owl.x - 160, owl.y + 52, owl.x - 170, owl.y + 25, owl.x - 180, owl.y - 5, 5);
-                drawTwig(owl.x - 170, owl.y + 25, owl.x - 160, owl.y + 5, owl.x - 150, owl.y - 12, 2.5);
-
-                // Twig 3: Strong central branch reaching high next to owl's left
-                drawTwig(owl.x - 70, owl.y + 48, owl.x - 65, owl.y - 5, owl.x - 85, owl.y - 50, 7);
-                drawTwig(owl.x - 67, owl.y + 15, owl.x - 80, owl.y - 10, owl.x - 90, owl.y - 35, 4);
-                drawTwig(owl.x - 75, owl.y - 20, owl.x - 70, owl.y - 40, owl.x - 73, owl.y - 65, 3.5);
-
-                // Twig 4: Twig extending up-right from the right side of owl
-                drawTwig(owl.x + 80, owl.y + 43, owl.x + 110, owl.y + 25, owl.x + 130, owl.y + 5, 4.5);
-                drawTwig(owl.x + 100, owl.y + 31, owl.x + 115, owl.y + 15, owl.x + 120, owl.y - 5, 2.5);
-
-                // Twig 5: Lower hanging branch
-                drawTwig(owl.x - 110, owl.y + 58, owl.x - 60, owl.y + 75, owl.x + 20, owl.y + 70, 7);
-                drawTwig(owl.x - 30, owl.y + 70, owl.x + 20, owl.y + 85, owl.x + 80, owl.y + 82, 4);
-                drawTwig(owl.x + 20, owl.y + 70, owl.x + 40, owl.y + 85, owl.x + 60, owl.y + 92, 3);
-            })();
+            drawCachedBranch(owl.x, owl.y, owlScale);
 
             // 2. Claws (charcoal grey claws clutching the branch)
             ctx.fillStyle = 'rgba(21, 13, 10, 0.45)'; // dark coffee
@@ -967,6 +1336,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             ctx.restore(); // end owlScale transform
 
+            // Foreground flight: paint after the moon, outside the owl scale transform.
+            drawBroom(time);
+
             // Update dialogue bubble opacity based on touch/mouse proximity or external force flag
             let dialogueTriggerDist = isMobile ? 80 : 180;
             if (owlDist < dialogueTriggerDist || window.forceOwlDialogue) {
@@ -979,6 +1351,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (owl.dialogueOpacity > 0.015) {
                 let op = owl.dialogueOpacity;
 
+                if (!window.forceOwlDialogue) {
+                    drawElegantOwlDialogue(time, op);
+                } else {
                 if (isMobile) {
                     // ── MOBILE: tight auto-sized rounded rectangle, max 2 lines ──
                     let mFontSize = 11;
@@ -1195,6 +1570,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ctx.restore();
                 }
 
+                }
             } // end dialogue
 
 
