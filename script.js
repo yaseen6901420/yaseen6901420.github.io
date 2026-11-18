@@ -199,7 +199,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let dpr = Math.min(window.devicePixelRatio || 1, 1.5);
         let width = window.innerWidth;
         let height = window.innerHeight;
-        let isMobile = width <= 768;
+        const touchViewport = window.matchMedia('(hover: none) and (pointer: coarse)');
+        const phoneLayout = () => width <= 768 || (width <= 1024 && touchViewport.matches);
+        let isMobile = phoneLayout();
         
         canvas.width = width * dpr;
         canvas.height = height * dpr;
@@ -210,11 +212,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Track pointer globally (mouse + touch)
         const mouse = { x: null, y: null };
         window.addEventListener('mousemove', (e) => {
+            if (isMobile) return;
             mouse.x = e.clientX;
             mouse.y = e.clientY;
             
             // Spawn magic sparkles at wand tip
-            if (Math.random() < 0.40) {
+            if (!reducedMotion.matches && Math.random() < 0.40) {
                 wandSparkles.push({
                     x: e.clientX + 5,
                     y: e.clientY + 5,
@@ -231,35 +234,63 @@ document.addEventListener('DOMContentLoaded', () => {
             mouse.x = null;
             mouse.y = null;
         });
-        // Touch support for mobile — owl reacts to finger position
-        window.addEventListener('touchstart', (e) => {
-            const t = e.touches[0];
-            mouse.x = t.clientX;
-            mouse.y = t.clientY;
-        }, { passive: true });
-        window.addEventListener('touchmove', (e) => {
-            const t = e.touches[0];
-            mouse.x = t.clientX;
-            mouse.y = t.clientY;
-            
-            // Spawn magic sparkles on touch drag too
-            if (Math.random() < 0.40) {
-                wandSparkles.push({
-                    x: t.clientX + 5,
-                    y: t.clientY + 5,
-                    vx: (Math.random() - 0.5) * 0.8,
-                    vy: Math.random() * 0.4 + 0.1,
-                    size: Math.random() * 2.0 + 1.2,
-                    life: 1.0,
-                    decay: Math.random() * 0.025 + 0.015,
-                    color: Math.random() > 0.5 ? 'rgba(245, 166, 35, ' : 'rgba(255, 230, 160, '
-                });
+        const mobileSkyStage = document.querySelector('.mobile-sky-stage');
+        const mobileOwlToggle = document.querySelector('.mobile-owl-toggle');
+        const mobileOwlPanel = document.querySelector('.mobile-owl-panel');
+        const mobileOwlMessage = document.querySelector('.mobile-owl-message');
+        const mobileOwlHint = document.querySelector('.mobile-owl-hint');
+        let mobileOwlOpen = false;
+        let mobileSceneDirty = true;
+        let mobileSceneBounds = null;
+        let mobileMessage = '';
+        const defaultOwlWhisper = 'Did you know?\nI love experimenting around with different sorts of tea in my spare time: white tea, green tea, black tea, yellow tea, fruit teas, matcha—you name it!\nWhoot fun!';
+        function syncMobileOwlText() {
+            const text = window.owlDialogueText || defaultOwlWhisper;
+            if (mobileOwlMessage && text !== mobileMessage) {
+                mobileOwlMessage.textContent = text;
+                mobileMessage = text;
+                mobileSceneDirty = true;
             }
-        }, { passive: true });
-        window.addEventListener('touchend', () => {
-            mouse.x = null;
-            mouse.y = null;
-        }, { passive: true });
+        }
+        function setMobileOwlOpen(open) {
+            mobileOwlOpen = Boolean(open && isMobile);
+            if (!mobileOwlToggle || !mobileOwlPanel) return;
+            if (mobileOwlOpen) syncMobileOwlText();
+            mobileOwlPanel.hidden = !mobileOwlOpen;
+            mobileOwlToggle.setAttribute('aria-expanded', String(mobileOwlOpen));
+            mobileOwlToggle.setAttribute('aria-label', mobileOwlOpen ? 'Let the owl rest' : 'Wake the owl and read its whisper');
+            if (mobileOwlHint) mobileOwlHint.textContent = mobileOwlOpen ? 'Tap outside to close' : 'Tap the owl';
+            mobileSceneDirty = true;
+        }
+        if (mobileOwlToggle) mobileOwlToggle.addEventListener('click', () => setMobileOwlOpen(!mobileOwlOpen));
+        document.addEventListener('click', event => {
+            if (mobileOwlOpen && !mobileOwlToggle.contains(event.target) && !mobileOwlPanel.contains(event.target)) {
+                setMobileOwlOpen(false);
+            }
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && mobileOwlOpen) {
+                setMobileOwlOpen(false);
+                mobileOwlToggle.focus({preventScroll:true});
+            }
+        });
+        if (mobileSkyStage && 'ResizeObserver' in window) {
+            new ResizeObserver(() => { mobileSceneDirty = true; }).observe(mobileSkyStage);
+        }
+        if (document.fonts) document.fonts.addEventListener('loadingdone', () => { mobileSceneDirty = true; });
+        function mobileOwlPosition() {
+            if (!mobileSkyStage) return {x:width/2,y:Math.max(240,height*0.35)};
+            if (mobileSceneDirty || !mobileSceneBounds) {
+                const rect = mobileSkyStage.getBoundingClientRect();
+                mobileSceneBounds = {x:rect.left+rect.width/2,bottom:rect.bottom+window.scrollY};
+                mobileSceneDirty = false;
+            }
+            return {x:mobileSceneBounds.x,y:mobileSceneBounds.bottom-window.scrollY-65};
+        }
+        function broomDisplayScale() {
+            return isMobile ? Math.min(0.78,Math.max(0.53,width/640)) :
+                Math.min(0.95,Math.max(0.53,width/1500));
+        }
 
         // Responsive position definitions
         let atom1 = { baseX: width * 0.82, baseY: height * 0.22, x: width * 0.82, y: height * 0.22, rx: 75, ry: 26, hover: false };
@@ -405,6 +436,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (!starWorker) { images.forEach(image => image.close()); return; }
                         starLayer = document.createElement('canvas');
                         starLayer.id = 'starfield-canvas';
+                        starLayer.style.width = width + 'px';
+                        starLayer.style.height = height + 'px';
                         starLayer.setAttribute('aria-hidden','true');
                         starLayer.style.visibility = 'hidden';
                         canvas.before(starLayer);
@@ -453,6 +486,8 @@ document.addEventListener('DOMContentLoaded', () => {
         initLeaves();
 
         function updateDimensions() {
+            const previousWidth = width;
+            mobileSceneDirty = true;
             dpr = Math.min(window.devicePixelRatio || 1, 1.5);
             width = window.innerWidth;
             height = window.innerHeight;
@@ -476,9 +511,16 @@ document.addEventListener('DOMContentLoaded', () => {
             owl.baseX = Math.max(95, width * 0.10);
             owl.baseY = height * 0.65;
 
-            isMobile = width <= 768;
-            initStars();
-            initLeaves();
+            isMobile = phoneLayout();
+            if (width !== previousWidth) {
+                initStars();
+                initLeaves();
+            }
+            if (!isMobile && mobileOwlOpen) setMobileOwlOpen(false);
+            if (starLayer) {
+                starLayer.style.width = width + 'px';
+                starLayer.style.height = height + 'px';
+            }
             if (starWorkerReady) starWorker.postMessage({type:'resize', ...starWorkerData()});
         }
 
@@ -498,7 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
             { w: 20, maxW: 35 }
         ];
 
-        isMobile = width <= 768;
+        isMobile = phoneLayout();
 
         // Decode detailed gothic artwork once into a small reusable sprite.
         let broomSprite = null;
@@ -518,14 +560,14 @@ document.addEventListener('DOMContentLoaded', () => {
         function broomFlight(elapsed) {
             const phase = ((elapsed + 5000) % 36000) / 27000;
             return {phase, x:-250+(width+500)*phase,
-                y:height*(0.36-Math.sin(Math.PI*Math.min(phase,1))*0.12)+
+                y:(isMobile ? Math.max(102,height*0.22) : height*(0.36-Math.sin(Math.PI*Math.min(phase,1))*0.12))+
                     Math.sin(elapsed*0.00065)*Math.min(height*0.026,18)};
         }
         function drawBroom(time) {
             if (reducedMotion.matches || !broomSprite) return;
             const flight = broomFlight(time);
             if (flight.phase>1) return;
-            const scale = Math.min(0.95,Math.max(0.53,width/1500));
+            const scale = broomDisplayScale();
             const opacity = Math.min(1,flight.phase*10,(1-flight.phase)*10);
             const sparkleSprite = getStarSprite(false,true);
             ctx.save();
@@ -578,7 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const phase = time % 36000;
             if (phase < 9000 || phase > 17200 || reducedMotion.matches) return 0;
             // Keep a generous clear interval around a broom crossing, including its trail.
-            const broomScale = Math.min(0.95, Math.max(0.53, width / 1500));
+            const broomScale = broomDisplayScale();
             for (const offset of [-1500, 0, 1500]) {
                 const broom = broomFlight(Math.max(0, time + offset));
                 if (broom.phase <= 1 &&
@@ -777,7 +819,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return {surface,boxWidth,boxHeight,pad};
         }
         function drawElegantOwlDialogue(time, opacity) {
-            const compact = width <= 768;
+            const compact = isMobile;
             const boxWidth = Math.min(compact ? 260 : 296, width - 28);
             const message = window.owlDialogueText ||
                 'Did you know?\nI love experimenting around with different sorts of tea in my spare time: white tea, green tea, black tea, yellow tea, fruit teas, matcha—you name it!\nWhoot fun!';
@@ -805,6 +847,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function animate(time) {
+            if (reducedMotion.matches) time = 0;
 
             ctx.clearRect(0, 0, width, height);
 
@@ -830,6 +873,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Update & Draw wind-blown silhouette leaves (realistic physics-based drift)
             leaves.forEach(leaf => {
+                if (reducedMotion.matches) return;
                 leaf.swayTime += leaf.swaySpeed;
                 
                 // Wind pushes the leaf steadily forward with minor turbulent gusts (sway) - scaled down for gentle breeze
@@ -899,10 +943,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
             // Update & Draw Majestic Perched Owl (Hedwig) on the left branch
-            // On mobile: draw at 45% scale in the top-left corner, dialogue hidden
-            let owlScale = isMobile ? 0.45 : 1.0;
-            let scaledBaseX = isMobile ? Math.max(40, width * 0.08) : owl.baseX;
-            let scaledBaseY = isMobile ? height * 0.22 : owl.baseY;
+            // On phones the owl and moon share a clear space above the academic content.
+            if (isMobile && mobileOwlOpen) syncMobileOwlText();
+            const mobilePerch = isMobile ? mobileOwlPosition() : null;
+            let owlScale = isMobile ? 0.62 : 1.0;
+            let scaledBaseX = isMobile ? mobilePerch.x : owl.baseX;
+            let scaledBaseY = isMobile ? mobilePerch.y : owl.baseY;
 
             // Anchor owl directly above the games quiz question card on games page
             let isGamePage = !!window.forceOwlDialogue;
@@ -931,7 +977,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Blink state logic
-            owl.blinkTimer -= 16.67;
+            if (!reducedMotion.matches) owl.blinkTimer -= 16.67;
+            else owl.blinkDuration = 0;
             if (owl.blinkTimer <= 0) {
                 owl.blinkDuration = 10; // Blink lasts 10 frames
                 owl.blinkTimer = Math.random() * 5000 + 3000;
@@ -942,10 +989,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let isBlinking = owl.blinkDuration > 0;
 
-            if (owlDist < 180) {
+            if ((isMobile && mobileOwlOpen) || (!isMobile && owlDist < 180)) {
                 owl.eyesOpen = true;
-                let dx = mouse.x - owl.x;
-                let dy = mouse.y - (owl.y - 36); // Head center is at y - 36
+                let dx = isMobile ? 0 : mouse.x - owl.x;
+                let dy = isMobile ? 0 : mouse.y - (owl.y - 36); // Head center is at y - 36
                 let angle = Math.atan2(dy, dx);
                 owl.targetHeadTilt = Math.max(-0.45, Math.min(0.45, angle));
                 
@@ -966,7 +1013,7 @@ document.addEventListener('DOMContentLoaded', () => {
             owl.wingFlare += (owl.targetWingFlare - owl.wingFlare) * 0.08;
 
             // Spawn magical snowy sparkles around Hedwig when active
-            if (owl.eyesOpen && !isBlinking && Math.random() < 0.12) {
+            if (!reducedMotion.matches && owl.eyesOpen && !isBlinking && Math.random() < 0.12) {
                 snowSparkles.push({
                     x: owl.x + (Math.random() - 0.5) * 60,
                     y: owl.y - 60 + Math.random() * 90,
@@ -997,6 +1044,9 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.lineWidth = 1;
             ctx.setLineDash([]);
 
+            // Cull only fully offscreen mobile artwork, retaining all visible detail.
+            const owlInView = !isMobile || (owl.y + 100 * owlScale > 0 && owl.y - 360 * owlScale < height);
+            if (owlInView) {
             // Scale owl drawing for mobile: pivot around owl position
             ctx.save();
             ctx.translate(owl.x, owl.y);
@@ -1335,6 +1385,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.restore();
 
             ctx.restore(); // end owlScale transform
+            } // end visible owl scene
 
             // Foreground flight: paint after the moon, outside the owl scale transform.
             drawBroom(time);
@@ -1348,7 +1399,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Dialogue cloud: shown on all screen sizes, adapted for mobile layout
-            if (owl.dialogueOpacity > 0.015) {
+            if (!isMobile && owl.dialogueOpacity > 0.015) {
                 let op = owl.dialogueOpacity;
 
                 if (!window.forceOwlDialogue) {
